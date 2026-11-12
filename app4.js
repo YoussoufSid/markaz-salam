@@ -9,7 +9,7 @@ async function seedLoad(){const f=$("#sdF")&&$("#sdF").files[0];if(!f){toast("ا
 function seedCount(){return SEED.h.reduce((a,h)=>a+h.st.length,0)}
 function seedOffer(){
   if(!can.write())return;
-  if(!SEED){modal("📥 استيراد بيانات المركز",`<p>اختر ملف البيانات <b>بيانات_مركز_السلام_للاستيراد.json</b> (أو ملف Excel لاستمارة المتابعة بعد حفظه بصيغة JSON من المطور).</p><p class="note">البيانات تبقى على هذا الجهاز فقط، ولا تُنشر على الإنترنت.</p><input type="file" id="sdF">`,`<button class="btn p" onclick="seedLoad()">متابعة</button><button class="btn o" onclick="lsSet('salam_seed1','later');closeModal()">لاحقًا</button>`);return}
+  if(!SEED){modal("📥 استيراد بيانات المركز",`<p>اختر ملف البيانات <b>بيانات_مركز_السلام_للاستيراد.json</b> (أو ملف Excel لاستمارة المتابعة بعد حفظه بصيغة JSON من المطور).</p><p class="note">البيانات تبقى على هذا الجهاز فقط، ولا تُنشر على الإنترنت.</p><input type="file" id="sdF" accept="*/*">`,`<button class="btn p" onclick="seedLoad()">متابعة</button><button class="btn o" onclick="lsSet('salam_seed1','later');closeModal()">لاحقًا</button>`);return}
   modal("📥 استيراد بيانات المركز",`<p>وُجدت بيانات المركز من الملفين المرسَلين:</p>
    <ul style="line-height:2">${SEED.h.map(h=>`<li><b>حلقة ${esc(h.name)}</b> — الشيخ ${esc(h.teacher)} — ${h.st.length} طالبًا</li>`).join("")}</ul>
    <p>المجموع: <b>${SEED.h.length}</b> حلقات، <b>${seedCount()}</b> طالبًا، <b>${SEED.h.length}</b> مدرسين — في <b>قسم البنين</b>.<br>المواد: ${SEED.subj.map(esc).join("، ")}.<br>وجدول توزيع الحصص للمستويات الستة.</p>
