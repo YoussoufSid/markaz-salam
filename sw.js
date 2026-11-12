@@ -1,4 +1,4 @@
-const C="salam-v26";
+const C="salam-v27";
 const F=["./","./index.html","./i18n.js","./qr.js","./app2.js","./app3.js","./app4.js","./manifest.json","./firebase-config.js","./icon-192.png","./icon-512.png","./building.jpg","./gate.jpg"];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>Promise.all(F.map(u=>fetch(u,{cache:"no-store"}).then(r=>r.ok&&c.put(u,r)).catch(()=>{})))))});
 self.addEventListener("message",e=>{if(e.data==="skip")self.skipWaiting()});

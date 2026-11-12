@@ -13,8 +13,8 @@ function seedOffer(){
   modal("📥 استيراد بيانات المركز",`<p>وُجدت بيانات المركز من الملفين المرسَلين:</p>
    <ul style="line-height:2">${SEED.h.map(h=>`<li><b>حلقة ${esc(h.name)}</b> — الشيخ ${esc(h.teacher)} — ${h.st.length} طالبًا</li>`).join("")}</ul>
    <p>المجموع: <b>${SEED.h.length}</b> حلقات، <b>${seedCount()}</b> طالبًا، <b>${SEED.h.length}</b> مدرسين — في <b>قسم البنين</b>.<br>المواد: ${SEED.subj.map(esc).join("، ")}.<br>وجدول توزيع الحصص للمستويات الستة.</p>
-   <label class="fld"><span><input type="checkbox" id="sdW" checked> تسجيل مواضع الحفظ والمراجعة من الاستمارة كمتابعةٍ بتاريخ اليوم</span></label>
-   <label class="fld"><span><input type="checkbox" id="sdS" checked> اعتماد هذه المواد لقسم العربية والتربية الإسلامية</span></label>
+   <label style="display:flex;gap:10px;align-items:center;margin:8px 0;cursor:pointer"><input type="checkbox" style="width:20px;height:20px;flex:none" id="sdW" checked><span>تسجيل مواضع الحفظ والمراجعة من الاستمارة كمتابعةٍ بتاريخ اليوم</span></label>
+   <label style="display:flex;gap:10px;align-items:center;margin:8px 0;cursor:pointer"><input type="checkbox" style="width:20px;height:20px;flex:none" id="sdS" checked><span>اعتماد هذه المواد لقسم العربية والتربية الإسلامية</span></label>
    <p class="note">لن يُكرَّر أي اسم موجود مسبقًا. ويبقى بعد ذلك باب الإضافة والتعديل والفصل والانفصال والتخرج مفتوحًا كالمعتاد.</p>`,
    `<button class="btn p" onclick="seedRun()">استيراد الآن</button><button class="btn o" onclick="lsSet('salam_seed1','later');closeModal()">لاحقًا</button>`);
 }
@@ -44,7 +44,7 @@ async function seedRun(){
     toast(`✓ تم الاستيراد: ${nH} حلقات، ${nS} طالبًا، ${nT} مدرسين`);
   }catch(e){saveErr(e)}finally{window.__bulk=0;SEC=oldSec;document.body.dataset.sec=SEC;render()}
 }
-function seedAuto(){try{if(!can.write()||lsGet("salam_seed1","")||!$("#lock").classList.contains("hide"))return;if(RAW.halaqat.some(h=>(h.sec||"b")==="b"))return;setTimeout(seedOffer,900)}catch(e){}}
+function seedAuto(){try{if(!can.write()||lsGet("salam_seed1","")||!$("#lock").classList.contains("hide"))return;if($("#ov")){setTimeout(seedAuto,4000);return}if(RAW.halaqat.some(h=>(h.sec||"b")==="b"))return;setTimeout(seedOffer,900)}catch(e){}}
 
 /* ---------- student status: graduation / dismissal / withdrawal ---------- */
 const STATUS_ACT=[["متخرج","🎓 تخرّج","g"],["منفصل","🚪 انفصال (انسحاب)","w"],["مفصول","⛔ فصل","r"],["متوقف","⏸ إيقاف مؤقت","w"],["نشط","✅ إعادة التفعيل","g"]];
