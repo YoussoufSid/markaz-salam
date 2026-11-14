@@ -4,44 +4,67 @@ const TT_DEF={"days": ["الإثنين", "الثلاثاء"], "slots": ["18h40 �
 
 const qT=(s,f,e,t)=>{if(!s)return "";if(/^الجزء/.test(s))return s;const a=s+(f?" "+f:"");if(e&&e!==s)return a+" – "+e+(t?" "+t:"");return a+(t&&t!==f?"–"+t:"")};
 /* ---------- one-time import of the centre's existing lists (boys section) ---------- */
+async function loadXLSX(){if(window.XLSX)return;await new Promise((ok,no)=>{const s=document.createElement("script");s.src="xlsx.mini.min.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+const nzA=x=>String(x||"").replace(/[ً-ْـ]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/ئ/g,"ي").replace(/ؤ/g,"و").replace(/\s+/g,"").replace(/^ال/,"");
+const SFIX={"الحافة":"الحاقة","الجمن":"الجن","عم":"النبأ","ملك":"الملك","الغافر":"غافر","الإنشقاق":"الانشقاق"};
+function surNorm(v){v=String(v==null?"":v).trim();if(!v)return "";v=SFIX[v]||v;const k=nzA(v),s=SURAH.find(x=>nzA(x.n)===k);return s?s.n:v}
+const numS=v=>v==null||v===""?"":String(typeof v==="number"&&Number.isInteger(v)?v:v).trim();
+const grS=v=>{v=String(v==null?"":v).trim();return v==="جيد جدا"?"جيد جدًا":v};
+function parseSheetRows(rows){
+  const H=[],subj=[];let cur=null,insub=false,sec="";
+  for(const r of rows){const c=r.map(x=>x==null?"":String(x).trim()),j=c.join(" ");
+    if(/قسم البنات|Les filles/i.test(j))sec="g";else if(!sec&&/قسم البنين|Les garçons/i.test(j))sec="b";
+    const hc=c.find(x=>x.includes("حلقة"));
+    if(hc){const tc=c.find(x=>x.includes("الشيخ"))||"";cur={name:hc.replace("حلقة","").replace(/\s+/g," ").trim(),teacher:(tc.split("/").pop()||"").trim(),st:[]};H.push(cur);insub=false;continue}
+    if(j.includes("المواد المدروسة")){insub=true;continue}
+    if(insub){const v=c.find(x=>x&&x!=="العربية والفرنسية");if(v)subj.push(v);continue}
+    if(cur&&typeof r[0]==="number"&&c[1]){const s={n:c[1].replace(/\s+/g," "),amt:numS(r[2]),hs:surNorm(r[3]),hf:numS(r[4]),he:surNorm(r[5]),ht:numS(r[6]),hg:grS(r[7]),rs:surNorm(r[8]),rf:numS(r[9]),re:surNorm(r[10]),rt:numS(r[11]),rg:grS(r[12]),note:c[13]||""};
+      Object.keys(s).forEach(k=>{if(!s[k])delete s[k]});cur.st.push(s)}}
+  return {type:"markaz-salam-seed",h:H.filter(h=>h.st.length),subj,sec:sec||"b"};
+}
 async function seedLoad(){const f=$("#sdF")&&$("#sdF").files[0];if(!f){toast("اختر الملف أولًا");return}
-  try{const o=JSON.parse(await f.text());if(o.type!=="markaz-salam-seed"||!Array.isArray(o.h))throw 0;SEED=o;closeModal();seedOffer()}catch(e){toast("الملف غير صالح")}}
+  try{let o;
+    if(/\.json$/i.test(f.name)||f.type.includes("json")){o=JSON.parse(await f.text());if(o.type!=="markaz-salam-seed"||!Array.isArray(o.h))throw 0}
+    else{toast("جارٍ قراءة ملف Excel…");await loadXLSX();const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const rows=[];wb.SheetNames.forEach(n=>rows.push(...XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null,raw:true})));o=parseSheetRows(rows);if(!o.h.length)throw 0}
+    SEED=o;closeModal();seedOffer()}catch(e){toast("لم أتعرّف على الملف: اختر استمارة المتابعة (Excel) أو ملف البيانات")}}
 function seedCount(){return SEED.h.reduce((a,h)=>a+h.st.length,0)}
 function seedOffer(){
   if(!can.write())return;
-  if(!SEED){modal("📥 استيراد بيانات المركز",`<p>اختر ملف البيانات <b>بيانات_مركز_السلام_للاستيراد.json</b> (أو ملف Excel لاستمارة المتابعة بعد حفظه بصيغة JSON من المطور).</p><p class="note">البيانات تبقى على هذا الجهاز فقط، ولا تُنشر على الإنترنت.</p><input type="file" id="sdF" accept="*/*">`,`<button class="btn p" onclick="seedLoad()">متابعة</button><button class="btn o" onclick="lsSet('salam_seed1','later');closeModal()">لاحقًا</button>`);return}
-  modal("📥 استيراد بيانات المركز",`<p>وُجدت بيانات المركز من الملفين المرسَلين:</p>
+  if(!SEED){modal("📥 استيراد من Excel",`<p>اختر <b>استمارة متابعة الدروس الأسبوعية</b> (ملف Excel بالشكل المعتاد)، أو ملف البيانات <b>markaz-salam-data.json</b>.</p><p class="note">يُضاف الطلاب الجدد تلقائيًا، وتُسجَّل مواضع الحفظ والمراجعة في المتابعة. ولا يتكرر أي اسم موجود.</p><p class="note">البيانات تبقى على هذا الجهاز فقط، ولا تُنشر على الإنترنت.</p><input type="file" id="sdF" accept="*/*">`,`<button class="btn p" onclick="seedLoad()">متابعة</button><button class="btn o" onclick="lsSet('salam_seed1','later');closeModal()">لاحقًا</button>`);return}
+  modal("📥 استيراد بيانات المركز",`<p>وُجد في الملف:</p>
    <ul style="line-height:2">${SEED.h.map(h=>`<li><b>حلقة ${esc(h.name)}</b> — الشيخ ${esc(h.teacher)} — ${h.st.length} طالبًا</li>`).join("")}</ul>
-   <p>المجموع: <b>${SEED.h.length}</b> حلقات، <b>${seedCount()}</b> طالبًا، <b>${SEED.h.length}</b> مدرسين — في <b>قسم البنين</b>.<br>المواد: ${SEED.subj.map(esc).join("، ")}.<br>وجدول توزيع الحصص للمستويات الستة.</p>
-   <label style="display:flex;gap:10px;align-items:center;margin:8px 0;cursor:pointer"><input type="checkbox" style="width:20px;height:20px;flex:none" id="sdW" checked><span>تسجيل مواضع الحفظ والمراجعة من الاستمارة كمتابعةٍ بتاريخ اليوم</span></label>
-   <label style="display:flex;gap:10px;align-items:center;margin:8px 0;cursor:pointer"><input type="checkbox" style="width:20px;height:20px;flex:none" id="sdS" checked><span>اعتماد هذه المواد لقسم العربية والتربية الإسلامية</span></label>
+   <p>المجموع: <b>${SEED.h.length}</b> حلقات، <b>${seedCount()}</b> طالبًا.${SEED.subj.length?`<br>المواد: ${SEED.subj.map(esc).join("، ")}.`:""}</p>
+   <div class="grid"><div class="fld"><label>القسم</label><select id="sdSec"><option value="b" ${(SEED.sec||"b")==="b"?"selected":""}>قسم البنين</option><option value="g" ${SEED.sec==="g"?"selected":""}>قسم البنات</option></select></div><div class="fld"><label>تاريخ المتابعة (نهاية الأسبوع)</label><input type="date" id="sdDt" value="${today()}"></div></div>
+   <label style="display:flex;gap:10px;align-items:center;margin:8px 0;cursor:pointer"><input type="checkbox" style="width:20px;height:20px;flex:none" id="sdW" checked><span>تسجيل مواضع الحفظ والمراجعة والتقديرات في المتابعة بهذا التاريخ</span></label>
+   <label style="display:flex;gap:10px;align-items:center;margin:8px 0;cursor:pointer"><input type="checkbox" style="width:20px;height:20px;flex:none" id="sdS" ${SEED.subj.length&&!center.subj_ar?"checked":""} ${SEED.subj.length?"":"disabled"}><span>اعتماد هذه المواد لقسم العربية والتربية الإسلامية</span></label>
    <p class="note">لن يُكرَّر أي اسم موجود مسبقًا. ويبقى بعد ذلك باب الإضافة والتعديل والفصل والانفصال والتخرج مفتوحًا كالمعتاد.</p>`,
    `<button class="btn p" onclick="seedRun()">استيراد الآن</button><button class="btn o" onclick="lsSet('salam_seed1','later');closeModal()">لاحقًا</button>`);
 }
 async function seedRun(){
-  const withW=$("#sdW")&&$("#sdW").checked,withS=$("#sdS")&&$("#sdS").checked;closeModal();
-  const oldSec=SEC;SEC="b";document.body.dataset.sec="b";window.__bulk=1;let nT=0,nH=0,nS=0;const dt=today();
+  const withW=$("#sdW")&&$("#sdW").checked,withS=$("#sdS")&&$("#sdS").checked&&SEED.subj.length,SX=($("#sdSec")&&$("#sdSec").value)||"b",dt=($("#sdDt")&&$("#sdDt").value)||today();closeModal();
+  const oldSec=SEC;SEC=SX;document.body.dataset.sec=SX;window.__bulk=1;let nT=0,nH=0,nS=0,nU=0;
   try{
     for(const h of SEED.h){
       let t=D.people.find(p=>p.cat==="teachers"&&p.name===h.teacher);
-      if(!t){t={id:uid("p"),cat:"teachers",name:h.teacher,gender:"ذكر",status:"نشط",job:"مدرس حلقة "+h.name,regNo:nextReg("teachers"),sec:"b"};await put("people",t);nT++}
+      if(!t){t={id:uid("p"),cat:"teachers",name:h.teacher,gender:SX==="g"?"أنثى":"ذكر",status:"نشط",job:"مدرس حلقة "+h.name,regNo:nextReg("teachers"),sec:SX};await put("people",t);nT++}
       let x=D.halaqat.find(q=>q.name===h.name);
-      if(!x){x={id:uid("h"),name:h.name,teacherId:t.id,gender:"بنون",sec:"b"};await put("halaqat",x);nH++}
+      if(!x){x={id:uid("h"),name:h.name,teacherId:t.id,gender:SX==="g"?"بنات":"بنون",sec:SX};await put("halaqat",x);nH++}
       const rec={};
       for(const r of h.st){
         let s=D.people.find(p=>p.cat==="students"&&p.name===r.n&&p.halaqa===x.name);
         const hp=qT(r.hs,r.hf,r.he,r.ht),rp=qT(r.rs,r.rf,r.re,r.rt);
-        if(!s){s={id:uid("p"),cat:"students",name:r.n,gender:"ذكر",status:"نشط",halaqa:x.name,dailyAmt:r.amt||"",hifzPos:hp,revPos:rp,regNo:nextReg("students"),start:dt,sec:"b"};await put("people",s);nS++}
+        if(s&&(hp||rp)){const u={...s};if(hp)u.hifzPos=hp;if(rp)u.revPos=rp;if(r.amt)u.dailyAmt=r.amt;await put("people",u);nU++}
+        if(!s){s={id:uid("p"),cat:"students",name:r.n,gender:SX==="g"?"أنثى":"ذكر",status:"نشط",halaqa:x.name,dailyAmt:r.amt||"",hifzPos:hp,revPos:rp,regNo:nextReg("students"),start:dt,sec:SX};await put("people",s);nS++}
         if(withW&&(hp||rp||r.note)){const c={att:hp||rp?"ح":""};
           Object.entries({hs:r.hs,hf:r.hf,he:r.he,ht:r.ht,hg:r.hg,rs:r.rs,rf:r.rf,re:r.re,rt:r.rt,rg:r.rg,note:r.note}).forEach(([k,v])=>{if(v)c[k]=v});
           if(hp)c.hifz=hp;if(rp)c.rev=rp;if(!c.att)delete c.att;rec[s.id]=c}
       }
-      if(withW&&Object.keys(rec).length){const id=x.id+"_"+dt,old=D.daily.find(d=>d.id===id);await put("daily",{id,halaqaId:x.id,halaqa:x.name,date:dt,rec:{...((old&&old.rec)||{}),...rec},sec:"b"})}
+      if(withW&&Object.keys(rec).length){const id=x.id+"_"+dt,old=D.daily.find(d=>d.id===id);await put("daily",{id,halaqaId:x.id,halaqa:x.name,date:dt,rec:{...((old&&old.rec)||{}),...rec},sec:SX})}
     }
     const c={...center};if(withS)c.subj_ar=SEED.subj.map(n=>n+":1").join("، ");
     if(!c.tt_b)c.tt_b=TT_DEF;if(!c.tt_g)c.tt_g=TT_DEF;await saveCenter(c);
     lsSet("salam_seed1","done");
-    toast(`✓ تم الاستيراد: ${nH} حلقات، ${nS} طالبًا، ${nT} مدرسين`);
+    toast(`✓ تم: ${nS} طالبًا جديدًا، ${nU} محدَّثًا، ${nH} حلقات جديدة، ${nT} مدرسين`);SEED=null;
   }catch(e){saveErr(e)}finally{window.__bulk=0;SEC=oldSec;document.body.dataset.sec=SEC;render()}
 }
 function seedAuto(){try{if(!can.write()||lsGet("salam_seed1","")||!$("#lock").classList.contains("hide"))return;if($("#ov")){setTimeout(seedAuto,4000);return}if(RAW.halaqat.some(h=>(h.sec||"b")==="b"))return;setTimeout(seedOffer,900)}catch(e){}}
