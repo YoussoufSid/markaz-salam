@@ -109,9 +109,9 @@ function ttEditor(){
 }
 function ttDelSlot(r){const T=view.ttEdit,L=T.levels[view.lv||0];if(L.slots){L.slots.splice(r,1);L.c.splice(r,1);L.note&&L.note.splice(r,1)}else{T.slots.splice(r,1);T.levels.forEach(l=>{if(!l.slots){l.c.splice(r,1);l.note&&l.note.splice(r,1)}})}render()}
 const P="استراحة الصلاة / Pause prière";
-const CP_TT=(()=>{const S=["18h30 à 19h00","19h00 à 19h30","19h30 à 19h50","19h50 à 20h30","20h30 à 20h45","20h45 à 21h15"],D=["الأربعاء","الخميس"],pp=[P,P];return [
+const CP_TT=(()=>{const S=["18h30 à 19h00","19h00 à 19h30","19h30 à 19h50","19h50 à 20h30","20h30 à 20h45","20h45 à 21h15"],D=["الإثنين","الثلاثاء"],pp=[P,P];return [
  {n:"CP 1re–2e — الأسبوع 1",days:D,slots:S,c:[["Lecture / Écriture","Lecture / Écriture"],["Initiation à l’ortho","Initiation à l’ortho"],["Numération","Opération"],["Langage","Langage"],pp,["Écriture","Écriture"]]},
- {n:"CP 1re–2e — الأسبوع 2",days:D,slots:S,c:[["Lecture / Écriture","Dictée de contrôle"],["Initiation à l’ortho","Contrôle de langage"],["Numération","Contrôle initiation à l’ortho"],["Langage","Contrôle de maths"],pp,["Écriture","Corrections contrôle"]]}]})();
+ {n:"CP 1re–2e — الأسبوع 2",days:D,slots:S,c:[["Lecture / Écriture","Contrôle d’I.O"],["I.O. (révision)","Contrôle de langage"],["Maths (révision)","Contrôle de maths"],["Langage (révision)","Lecture"],pp,["Écriture","Écriture"]]}]})();
 const CM_TT=(()=>{const S1=["18h30 à 19h00","19h00 à 19h30","19h30 à 20h00","20h00 à 20h30","20h30 à 20h45","20h45 à 21h15"],S2=["18h30 à 19h00","19h00 à 19h30","19h30 à 20h00","20h00 à 20h30","20h30 à 20h45","20h45 à 21h00"],pp=[P,P];
  return [
  {n:"CM 5e–6e — الأسبوع 1 (أ)",days:["الإثنين","الثلاثاء"],slots:S1,c:[["Lecture","Rédaction"],["Maths (num)","Opération"],["Grammaire","Conjugaison"],["Exo Grammaire","Exo Conjugaison"],pp,["Exo Maths","Exo (Opération)"]]},
