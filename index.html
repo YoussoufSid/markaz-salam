@@ -277,7 +277,7 @@ body[data-sec=g] .hero2 .hc{background:linear-gradient(135deg,#a0336b,#5c1b3d)}
 .idc2 .cb{flex:1;display:flex;gap:2.5mm;padding:2mm 2.5mm;align-items:stretch}
 .idc2 .pp{width:19mm;height:24mm;border:.4mm solid var(--cc);border-radius:1.5mm;overflow:hidden;background:#f2f2f2;display:flex;align-items:center;justify-content:center;font-size:16pt;color:var(--cc);flex:none}
 .idc2 .pp img{width:100%;height:100%;object-fit:cover}
-.idc2 .inf{flex:1;line-height:1.5;font-size:7.6pt}.idc2 .inf b{display:block;font-size:10pt;color:#111;line-height:1.25;margin-bottom:.6mm}
+.idc2 .inf{flex:1;line-height:1.38;font-size:6.9pt}.idc2 .inf b{display:block;font-size:10pt;color:#111;line-height:1.25;margin-bottom:.6mm}
 .idc2 .qr{width:15mm;height:15mm;align-self:flex-end;flex:none}.idc2 .qr svg{width:100%;height:100%}
 .idc2 .cf{background:var(--cc);color:#fff;font-size:6.5pt;text-align:center;padding:.8mm}
 .idc2 .bk{flex:1;padding:2.5mm 3mm;font-size:7.3pt;line-height:1.55}
@@ -1354,22 +1354,27 @@ function pickPhoto(inp){
 const normName=n=>String(n||"").replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/\s+/g," ").trim();
 const CARDC={students:"#0b7a3e",admins:"#1d4e89",teachers:"#8a5a00",supervisors:"#6a3d9a",guards:"#37474f",workers:"#a34b17"};
 function cardTitle(p){const f=p.gender==="أنثى";return {students:f?"بطاقة طالبة":"بطاقة طالب",admins:f?"بطاقة إدارية":"بطاقة إداري",teachers:f?"بطاقة مدرّسة":"بطاقة مدرّس",supervisors:f?"بطاقة مراقبة":"بطاقة مراقب",guards:"بطاقة حارس",workers:f?"بطاقة عاملة":"بطاقة عامل"}[p.cat]}
+function cardTitleFr(p){const f=p.gender==="أنثى";return {students:"Carte d'élève",admins:"Carte d'administration",teachers:f?"Carte d'enseignante":"Carte d'enseignant",supervisors:f?"Carte de surveillante":"Carte de surveillant",guards:"Carte de gardien",workers:f?"Carte d'employée":"Carte d'employé"}[p.cat]}
+const frCls=c=>{const i=CLASSES.indexOf(c);return i>=0?CLASSES_FR[i].replace(" année",""):""};
 function qrSVG(t){try{const q=qrcode(0,"M");q.addData(t);q.make();return q.createSvgTag({cellSize:2,margin:0,scalable:true})}catch(e){return ""}}
 function idCard(p){
   const isS=p.cat==="students",cc=CARDC[p.cat]||"#0b7a3e",yr=p.year||center.year||"";
-  const rows=isS?[["الرقم",p.regNo],["القرآن",[p.level,p.halaqa].filter(Boolean).join(" — ")],["العربي",shortCls(p.arClass)],["الفرنسي",shortCls(p.frClass)],["النظام",p.regime]]
-                :[["الرقم",p.regNo],["الوظيفة",p.job],["البرنامج",p.program],["الهاتف",p.phone]];
-  const front=`<div class="idc2" style="--cc:${cc}"><div class="stripe"></div><div class="ch"><img src="icon-192.png" alt=""><div><b>${esc(center.name)}</b><span>${SECS[SEC]} · ${esc(center.loc)}</span></div></div>
-    <div class="tt">${cardTitle(p)}</div>
-    <div class="cb"><div class="pp">${p.photo?`<img src="${p.photo}" alt="">`:esc((p.name||"?").trim()[0])}</div>
-    <div class="inf"><b>${pn(p)}</b>${rows.filter(r=>r[1]).slice(0,5).map(r=>`${r[0]}: ${esc(r[1])}`).join("<br>")}</div>
-    <div class="qr">${qrSVG("MARKAZ-SALAM|"+(p.regNo||p.id)+"|"+p.name)}</div></div>
-    <div class="cf">${yr?"السنة الدراسية "+esc(yr):"&nbsp;"}</div></div>`;
-  const back=`<div class="idc2" style="--cc:${cc}"><div class="stripe"></div><div class="ch"><img src="icon-192.png" alt=""><div><b>${esc(center.name)}</b><span>${esc(center.loc)}</span></div></div>
-    <div class="bk">${isS?`ولي الأمر: <b>${esc(p.guardian||"—")}</b><br>هاتفه: <span dir="ltr">${esc(p.guardianPhone||"—")}</span><br>`:`هاتف الطوارئ: <span dir="ltr">${esc(p.emergency||"—")}</span><br>`}
-    ${center.phone?`هاتف المركز: <span dir="ltr">${esc(center.phone)}</span><br>`:""}
-    هذه البطاقة شخصية وهي ملك للمركز، يجب حملها داخل المركز وإبرازها عند الطلب، ويُرجى إعادتها إلى المركز عند العثور عليها.
-    <div class="sg"><span>صالحة للسنة: ${esc(yr||"........")}</span><span>${sigDG()}</span></div></div>
+  const cl=c=>c?[shortCls(c),frCls(c)].filter(Boolean).join(" · "):"";
+  const lv=[p.level,p.halaqa].filter(Boolean).join(" — ");
+  const rows=isS?[["الرقم / N°",p.regNo],["القرآن / Coran",lv],["العربي / Arabe",cl(p.arClass)],["الفرنسي / Français",cl(p.frClass)],["النظام / Régime",p.regime]]
+                :[["الرقم / N°",p.regNo],["الوظيفة / Fonction",p.job],["البرنامج / Programme",p.program],["الهاتف / Tél.",p.phone]];
+  const front=`<div class="idc2" style="--cc:${cc}"><div class="stripe"></div><div class="ch"><img src="icon-192.png" alt=""><div><b>${esc(center.name)}</b><span dir="ltr" style="display:block">${esc(frName())}</span><span>${SECS[SEC]} · ${esc(center.loc)}</span></div></div>
+    <div class="tt">${cardTitle(p)} · <span style="font-weight:600;font-size:7pt;direction:ltr;unicode-bidi:isolate">${cardTitleFr(p)}</span></div>
+    <div class="cb"><div class="pp">${p.photo?`<img src="${p.photo}" alt="">`:esc((p.name||p.nameFr||"?").trim()[0])}</div>
+    <div class="inf"><b>${esc(p.name||"")}</b>${p.nameFr?`<b dir="ltr" style="font-size:8.2pt;color:#444;font-weight:600;margin-top:-.4mm">${esc(p.nameFr)}</b>`:""}${rows.filter(r=>r[1]).slice(0,5).map(r=>`${r[0]}: ${esc(r[1])}`).join("<br>")}</div>
+    <div class="qr">${qrSVG("MARKAZ-SALAM|"+(p.regNo||p.id)+"|"+(p.name||p.nameFr))}</div></div>
+    <div class="cf">${yr?"السنة الدراسية / Année scolaire : "+esc(yr):"&nbsp;"}</div></div>`;
+  const back=`<div class="idc2" style="--cc:${cc}"><div class="stripe"></div><div class="ch"><img src="icon-192.png" alt=""><div><b>${esc(center.name)}</b><span dir="ltr" style="display:block">${esc(frName())}</span><span>${esc(center.loc)}</span></div></div>
+    <div class="bk">${isS?`ولي الأمر / Tuteur : <b>${esc(p.guardian||"—")}</b><br>هاتفه / Tél. : <span dir="ltr">${esc(p.guardianPhone||"—")}</span><br>`:`هاتف الطوارئ / Urgence : <span dir="ltr">${esc(p.emergency||"—")}</span><br>`}
+    ${center.phone?`هاتف المركز / Tél. du centre : <span dir="ltr">${esc(center.phone)}</span><br>`:""}
+    هذه البطاقة شخصية وهي ملك للمركز، تُبرز عند الطلب، ويُرجى إعادتها عند العثور عليها.
+    <span dir="ltr" style="display:block;font-size:5.8pt;color:#555;line-height:1.25;margin-top:.5mm">Carte personnelle, propriété du centre. À présenter sur demande ; merci de la rapporter si vous la trouvez.</span>
+    <div class="sg"><span>صالحة للسنة / Valable : ${esc(yr||"........")}</span><span>${sigDG()}</span></div></div>
     <div class="cf">«خيرُكم مَن تعلَّم القرآنَ وعلَّمه»</div></div>`;
   return `<div class="idpair">${front}${back}</div>`;
 }
