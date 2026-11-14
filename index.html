@@ -543,7 +543,7 @@ const STUDENT=[{g:"النظام والأقسام الدراسية"},{k:"regime",
 const STAFF=[{g:"البيانات الوظيفية"},{k:"regNo",l:"الرقم الوظيفي",ro:1},{k:"job",l:"الوظيفة / المنصب"},{k:"start",l:"تاريخ التعيين",type:"date"},{k:"contract",l:"نوع التعاقد",type:"select",opts:["دائم","مؤقت","متطوع"]},{k:"shift",l:"أوقات الدوام"},{k:"qualification",l:"المؤهل العلمي"},{k:"salary",l:"الراتب الشهري",type:"number",min:0},{k:"emergency",l:"هاتف للطوارئ",type:"tel"},{k:"email",l:"البريد (لربط حساب الدخول)",type:"email"}];
 const EXTRA={teachers:[{k:"program",l:"البرنامج / القسم",type:"select",opts:[...PROGRAMS,"أكثر من برنامج"]},{k:"memorized",l:"عدد الأجزاء المحفوظة",type:"number",min:0,max:30},{k:"ijaza",l:"الإجازة / السند"}],supervisors:[{k:"section",l:"القسم المكلّف به"}],guards:[{k:"post",l:"نوبة الحراسة",type:"select",opts:["نهارية","ليلية","متناوبة"]}],workers:[{k:"task",l:"طبيعة العمل",type:"select",opts:["نظافة","طبخ","صيانة","سائق","آخر"]}],admins:[]};
 const COMMON_END=[{g:"الحالة"},{k:"status",l:"الحالة",type:"select",opts:["نشط","متوقف","منفصل","مفصول","متخرج","منقطع"]},{k:"statusDate",l:"تاريخ تغيير الحالة",type:"date"},{k:"statusReason",l:"سبب تغيير الحالة"},{k:"notes",l:"ملاحظات",type:"textarea",full:1}];
-const fieldsFor=c=>c==="students"?[...COMMON_TOP,...STUDENT,...COMMON_END]:[...COMMON_TOP,...STAFF,...(EXTRA[c]||[]),...COMMON_END];
+const fieldsFor=c=>c==="students"?[...COMMON_TOP.filter(f=>f.k!=="nina"&&f.k!=="phone").map(f=>f.k==="gender"?{...f,opts:[SEC==="g"?"أنثى":"ذكر"]}:f),...STUDENT,...COMMON_END]:[...COMMON_TOP,...STAFF,...(EXTRA[c]||[]),...COMMON_END];
 const ATT=[["ح","حاضر","a1"],["غ","غائب","a2"],["ت","متأخر","a3"],["س","مستأذن","a4"]];
 const SATT=[["ح","حاضر","a1"],["غ","غائب","a2"],["ت","متأخر","a3"],["إ","إجازة","a4"]];
 const GRADES=["ممتاز","جيد جدًا","جيد","حسن","مقبول","ضعيف","لم يُسمِّع"];
@@ -711,6 +711,7 @@ function go(name,extra){if(view.dirty){confirmDiscard(()=>{view={name,...(extra|
 function confirmDiscard(fn){modal("تعديلات غير محفوظة","<p>لديك تعديلات لم تُحفظ في المتابعة. هل تريد تجاهلها؟</p>",`<button class="btn d" id="cdY">تجاهل</button><button class="btn o" onclick="closeModal()">رجوع</button>`);$("#cdY").onclick=()=>{view.dirty=false;closeModal();fn()}}
 function render(){
   if(ROLE==="none"){$("#nav").innerHTML="";$("#qbtn").style.display="none";$("#app").innerHTML=`<div class="empty">حسابك غير مخوّل بعد — اطلب من مسؤول المركز إضافتك.<br><br><button class="btn o" onclick="logout()">تسجيل الخروج</button></div>`;return}
+  try{const sv=sessionStorage.getItem("salam_view");if(sv){sessionStorage.removeItem("salam_view");if(view.name==="home")view=JSON.parse(sv)}}catch(e){}
   renderShell();if(typeof renderBottom==="function")renderBottom();
   if(ROLE==="parent"){view={name:"kids"};}
   if(ALLOWV[ROLE]&&!ALLOWV[ROLE].includes(view.name))view={name:"home"};
@@ -752,7 +753,7 @@ function vHome(){
   if(!can.data())return h+homeLite();
   h+=quickActions()+`
   <div class="stats">
-   <div class="stat"><div class="v">${st.length}</div><div class="k">طالب نشط (بنون ${boys} · بنات ${girls})</div></div>
+   <div class="stat"><div class="v">${st.length}</div><div class="k">طالب نشط</div></div>
    <div class="stat"><div class="v">${st.filter(s=>s.regime==="نظام داخلي").length} / ${st.filter(s=>s.regime!=="نظام داخلي").length}</div><div class="k">داخلي / ذهاب وإياب</div></div>
    <div class="stat"><div class="v">${D.halaqat.length}</div><div class="k">حلقة</div></div>
    <div class="stat"><div class="v">${activeStaff().length}</div><div class="k">عامل نشط</div></div>
@@ -790,7 +791,7 @@ function vList(){
   <div class="tools">
     <input type="search" placeholder="بحث بالاسم أو الهاتف أو الرقم…" value="${esc(view.q)}" oninput="view.q=this.value;$('#lb').innerHTML=listBody()">
     <select onchange="view.st=this.value;$('#lb').innerHTML=listBody()"><option value="">كل الحالات</option>${["نشط","متوقف","منفصل","مفصول","متخرج","منقطع"].map(s=>`<option ${view.st===s?"selected":""}>${s}</option>`).join("")}</select>
-    <select onchange="view.g=this.value;$('#lb').innerHTML=listBody()"><option value="">الجنسان</option><option ${view.g==="ذكر"?"selected":""}>ذكر</option><option ${view.g==="أنثى"?"selected":""}>أنثى</option></select>
+    
     ${c==="students"&&hs.length?`<select onchange="view.h=this.value;$('#lb').innerHTML=listBody()"><option value="">كل الحلقات</option>${hs.map(x=>`<option ${view.h===x?"selected":""}>${esc(x)}</option>`).join("")}<option value="__none" ${view.h==="__none"?"selected":""}>بلا حلقة</option></select>`:""}
     ${c==="students"?`<select onchange="view.rg=this.value;$('#lb').innerHTML=listBody()"><option value="">كل الأنظمة</option>${REGIMES.map(x=>`<option ${view.rg===x?"selected":""}>${x}</option>`).join("")}</select><select onchange="view.ql=this.value;$('#lb').innerHTML=listBody()"><option value="">كل مستويات التحفيظ</option>${qLevels().map(x=>`<option ${view.ql===x?"selected":""}>${esc(x)}</option>`).join("")}</select><select onchange="view.ac=this.value;$('#lb').innerHTML=listBody()"><option value="">العربي: كل الصفوف</option>${CLASSES.map(x=>`<option value="${x}" ${view.ac===x?"selected":""}>العربي: ${shortCls(x)}</option>`).join("")}</select><select onchange="view.fc=this.value;$('#lb').innerHTML=listBody()"><option value="">الفرنسي: كل الصفوف</option>${CLASSES.map(x=>`<option value="${x}" ${view.fc===x?"selected":""}>الفرنسي: ${shortCls(x)}</option>`).join("")}</select>`:""}
     ${can.write()?`<button class="btn p" onclick="openForm('${c}')">＋ إضافة</button>`:""}
@@ -1602,7 +1603,7 @@ function trTree(root){
 }
 new MutationObserver(ms=>{if(LANG!=="fr")return;ms.forEach(m=>m.addedNodes.forEach(trTree))}).observe(document.body,{childList:true,subtree:true});
 function applyLang(){document.documentElement.lang=LANG==="fr"?"fr":"ar";document.documentElement.dir=LANG==="fr"?"ltr":"rtl";$("#langBtn").textContent=LANG==="fr"?"ع":"FR";if(LANG==="fr")trTree(document.body)}
-function toggleLang(){LANG=LANG==="fr"?"ar":"fr";lsSet("salam_lang",LANG);location.reload()}
+function toggleLang(){LANG=LANG==="fr"?"ar":"fr";lsSet("salam_lang",LANG);try{const v={...view};delete v.dirty;sessionStorage.setItem("salam_view",JSON.stringify(v))}catch(e){}location.reload()}
 
 /* ================= boot ================= */
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
