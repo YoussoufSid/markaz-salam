@@ -73,6 +73,7 @@ main{max-width:1100px;margin:auto;padding:16px 14px 90px}
 .tile .n{font-size:28px;font-weight:700;color:var(--g)}
 .tile .l{font-weight:700}
 .tile .s{font-size:13px;color:var(--mut);margin-top:2px}
+details.more{margin:0 0 14px;background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:0 12px}details.more summary{padding:13px 4px;font-weight:800;color:var(--g);cursor:pointer;font-size:15px}details.more[open] summary{border-bottom:1px solid var(--ln);margin-bottom:10px}details.more .panel{box-shadow:none;border:0;padding-inline:0}
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
 .stat{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:12px 14px}
 .stat .v{font-size:22px;font-weight:700;color:var(--g)}
@@ -255,7 +256,7 @@ body[data-sec=g] .hero2 .hc{background:linear-gradient(135deg,#a0336b,#5c1b3d)}
 .hero2 .ha button{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:12px;padding:9px 14px;cursor:pointer;font-weight:700}
 .hero2 .ha button.y{background:#e2b23a;border-color:#e2b23a;color:#3b2a00}
 .hero2 .hp{background:url(building.jpg) center/cover}
-@media(max-width:700px){.hero2{grid-template-columns:1fr}.hero2 .hp{min-height:140px;order:-1}}
+@media(max-width:700px){.hero2{grid-template-columns:1fr;min-height:0}.hero2 .hp{min-height:70px;order:-1}.hero2 .hc{padding:16px 18px}.hero2 .hv{font-size:20px}.qa{grid-template-columns:repeat(3,1fr);gap:8px}.qa button{padding:10px 4px;font-size:12px;border-radius:14px}.qa i{width:38px;height:38px;border-radius:12px}}
 .alist .ai{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--ln)}
 .alist .ai:last-child{border-bottom:0}
 .alist .dot{width:8px;height:8px;border-radius:50%;background:var(--org);flex:none}
@@ -317,6 +318,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
 .qa{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin:-2px 0 16px}
 .qa button{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:14px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--tx);font-weight:700;font-size:13px;box-shadow:0 1px 2px rgba(0,0,0,.03),0 6px 16px rgba(0,0,0,.04);transition:transform .15s,border-color .15s}
 .qa button:hover{transform:translateY(-3px);border-color:var(--gold)}
+@media(max-width:700px){.qa{grid-template-columns:repeat(3,1fr)!important;gap:8px}.qa button{padding:10px 4px;font-size:12px;border-radius:14px}.qa i{width:38px!important;height:38px!important;border-radius:12px}}
 .qa i{font-style:normal;font-size:22px;width:46px;height:46px;border-radius:14px;background:var(--gl);display:flex;align-items:center;justify-content:center;color:var(--g)}
 .toast{background:#123c27;box-shadow:0 10px 30px rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);bottom:90px}
 .logrow .lt{font-family:monospace;color:var(--mut);min-width:44px}
@@ -748,9 +750,9 @@ function vHome(){
   let h=`<div class="hero2"><div class="hc"><div class="hs">● ${esc(center.name)} · ${SECS[SEC]} · ${esc(center.loc)}</div>
    ${postName("founder")||postName("dg")?`<div class="hfd">${postName("founder")?`<span>المؤسِّسة: <b>${esc(postName("founder"))}</b> — حفظها الله وبارك فيها</span>`:""}${postName("dg")?`<span>المدير العام: <b>${esc(postName("dg"))}</b></span>`:""}</div>`:""}
    <div class="hv">﴿${vv[0]}﴾</div><div class="hr">${vv[1]}</div>
-   <div class="hd">${ico("calendar",15)} ${dayName(t)}، ${arDate(t)} · ${hijri()}</div>${center.phone?`<div class="hd">${ico("phone",15)} <span dir="ltr">${esc(center.phone)}</span></div>`:""}
+   <div class="hd">${ico("calendar",15)} ${dayName(t)}، ${arDate(t)} · ${hijri()}</div>
    <div class="hw">مرحبًا بك${un?" — "+esc(un):""}${center.year?" · السنة الدراسية "+esc(center.year):""}</div>
-   <div class="ha">${can.daily()?`<button class="y" onclick="go('daily',{date:today()})">${ico("check",18)} متابعة اليوم</button>`:""}${can.write()?`<button onclick="go('list',{cat:'students'});setTimeout(()=>openForm('students'),50)">${ico("plus",18)} تسجيل طالب</button>`:""}${can.finW()?`<button onclick="go('finance',{tab:'fees'})">${ico("wallet",18)} دفع جديد</button>`:""}${can.data()?`<button onclick="go('reports')">${ico("printer",18)} التقارير</button>`:""}${ROLE==="guard"?`<button class="y" onclick="go('board',{btab:'permits'})">${ico("bed",18)} أذونات الخروج</button>`:""}</div></div><div class="hp"></div></div>`;
+   <div class="ha${can.data()?" hide":""}">${can.daily()?`<button class="y" onclick="go('daily',{date:today()})">${ico("check",18)} متابعة اليوم</button>`:""}${can.write()?`<button onclick="go('list',{cat:'students'});setTimeout(()=>openForm('students'),50)">${ico("plus",18)} تسجيل طالب</button>`:""}${can.finW()?`<button onclick="go('finance',{tab:'fees'})">${ico("wallet",18)} دفع جديد</button>`:""}${can.data()?`<button onclick="go('reports')">${ico("printer",18)} التقارير</button>`:""}${ROLE==="guard"?`<button class="y" onclick="go('board',{btab:'permits'})">${ico("bed",18)} أذونات الخروج</button>`:""}</div></div><div class="hp"></div></div>`;
   if(!can.data())return h+homeLite();
   h+=quickActions()+`
   <div class="stats">
@@ -764,10 +766,10 @@ function vHome(){
     const exp=D.finance.filter(f=>f.kind==="expense"&&monthOf(f.date)===m).reduce((a,f)=>a+num(f.amount),0);
     h+=`<div class="stat gold"><div class="v">${money(inc)}</div><div class="k">إيرادات ${monthName(m)}</div></div><div class="stat gold"><div class="v">${money(exp)}</div><div class="k">مصروفات الشهر</div></div><div class="stat gold"><div class="v" style="color:${inc-exp<0?"var(--red)":"var(--g)"}">${money(inc-exp)}</div><div class="k">رصيد الشهر</div></div>`;
   }
-  h+=`</div>`+homeCharts()+`<div class="panel"><h3>توزيع الطلاب على الأقسام الدراسية</h3><div class="scroll"><table class="tbl"><tr><th rowspan="2">القسم</th><th class="c" colspan="6">المرحلة الابتدائية</th><th class="c" colspan="3">المرحلة الإعدادية</th><th class="c" rowspan="2">غير محدد</th></tr><tr>${CLASSES.map((c,i)=>`<th class="c">${i<6?i+1:i-5}</th>`).join("")}</tr>
+  h+=`</div><details class="more"><summary>📊 مزيد من الإحصاءات والرسوم</summary>`+homeCharts()+`<div class="panel"><h3>توزيع الطلاب على الأقسام الدراسية</h3><div class="scroll"><table class="tbl"><tr><th rowspan="2">القسم</th><th class="c" colspan="6">المرحلة الابتدائية</th><th class="c" colspan="3">المرحلة الإعدادية</th><th class="c" rowspan="2">غير محدد</th></tr><tr>${CLASSES.map((c,i)=>`<th class="c">${i<6?i+1:i-5}</th>`).join("")}</tr>
    <tr><td>العربية والتربية الإسلامية</td>${CLASSES.map(c=>`<td class="c">${st.filter(s=>s.arClass===c).length||""}</td>`).join("")}<td class="c">${st.filter(s=>!s.arClass).length||""}</td></tr>
    <tr><td>الفرنسية والمواد العصرية</td>${CLASSES.map(c=>`<td class="c">${st.filter(s=>s.frClass===c).length||""}</td>`).join("")}<td class="c">${st.filter(s=>!s.frClass).length||""}</td></tr></table></div>
-   <div class="note" style="margin-top:6px">📖 مستويات القرآن الكريم (الحفظ والمراجعة): ${qLevels().map(l=>`${esc(l)} (${st.filter(s=>s.level===l).length})`).join(" · ")}</div></div><div class="panel alerts"><h3>${ico("bell",18)} تنبيهات <span class="cnt">%%N%%</span></h3>`;
+   <div class="note" style="margin-top:6px">📖 مستويات القرآن الكريم (الحفظ والمراجعة): ${qLevels().map(l=>`${esc(l)} (${st.filter(s=>s.level===l).length})`).join(" · ")}</div></div></details><div class="panel alerts"><h3>${ico("bell",18)} تنبيهات <span class="cnt">%%N%%</span></h3>`;
   const wd=new Date().getDay();let n=0;
   if(wd!==5&&D.halaqat.length){const miss=D.halaqat.filter(x=>!todays.some(d=>d.halaqaId===x.id));if(miss.length){n++;h+=`<div class="alert w">لم تُسجَّل متابعة اليوم في: ${miss.map(x=>esc(x.name)).join("، ")}</div>`}}
   const ab=absentStreaks();if(ab.length){n++;h+=`<div class="alert r">غياب 3 حصص متتالية: ${ab.map(a=>`<a href="#" onclick="openDetail('${a.s.id}');return false">${esc(a.s.name)}</a> (${esc(a.h.name)})`).join("، ")} — يُستحسن التواصل مع أولياء أمورهم.</div>`}
@@ -777,7 +779,7 @@ function vHome(){
   const noH=st.filter(s=>!s.halaqa);if(noH.length&&D.halaqat.length){n++;h+=`<div class="alert w">${noH.length} طالبًا غير مسندين إلى حلقة.</div>`}
   if(!n)h+=`<div class="alert ok">لا توجد تنبيهات — الحمد لله.</div>`;
   h=h.replace("%%N%%",n||"0");
-  h+=`</div><div class="tiles">`+ORDER.map(c=>{const all=D.people.filter(p=>p.cat===c);return `<button class="tile" onclick="go('list',{cat:'${c}'})"><div class="ic">${CATS[c].ic}</div><div class="n">${all.filter(isAct).length}</div><div class="l">${CATS[c].t}</div><div class="s">${all.length} سجل إجمالًا</div></button>`}).join("")+`</div>`;
+  h+=`</div><details class="more"><summary>📂 قاعدة البيانات (الطلاب والعاملون)</summary><div class="tiles">`+ORDER.map(c=>{const all=D.people.filter(p=>p.cat===c);return `<button class="tile" onclick="go('list',{cat:'${c}'})"><div class="ic">${CATS[c].ic}</div><div class="n">${all.filter(isAct).length}</div><div class="l">${CATS[c].t}</div><div class="s">${all.length} سجل إجمالًا</div></button>`}).join("")+`</div></details>`;
   return h;
 }
 
@@ -1583,6 +1585,7 @@ function gateGo(){const g=$("#gate");g.classList.add("go");setTimeout(()=>{g.cla
 let gateNext=null;
 function exitGate(next){document.body.classList.remove("menu");const g=$("#gate");gateNext=next;g.className="ex";g.querySelector(".gl").textContent="بوابة الخروج";g.querySelector(".gv").textContent="رافقتكم السلامة";g.querySelector(".gr").textContent="شكرًا لكم — نلقاكم على خير";g.querySelector(".gmsg").innerHTML="في أمان الله وحفظه<br><small>سبحانك اللهم وبحمدك، أشهد أن لا إله إلا أنت، أستغفرك وأتوب إليك</small>";clearTimeout(g._t);g._t=setTimeout(gateDone,4200)}
 function gateDone(){const g=$("#gate");clearTimeout(g._t);if(g.classList.contains("hide"))return;g.className="hide";const n=gateNext;gateNext=null;n&&n()}
+try{if(sessionStorage.getItem("salam_skip")){sessionStorage.removeItem("salam_skip");document.getElementById("splash").classList.add("hide");addEventListener("load",()=>setTimeout(()=>{try{enterApp()}catch(e){}},60))}}catch(e){}
 function enterApp(){const sp=$("#splash");sp.style.opacity=0;setTimeout(()=>sp.classList.add("hide"),600);if(hasPin()&&!$("#lock").dataset.ok){const su=lusers().find(u=>u.id===lsGet("salam_sess",""));if(su){$("#lock").dataset.ok="1";applyUser(su)}else showLock("unlock")}}
 /* single exit: through the exit gate only */
 function doExit(){if(ROLE==="visitor"){exitGate(visitorOut);return}exitGate(()=>{lsSet("salam_sess","");FS?logout():switchUser()})}
@@ -1609,7 +1612,7 @@ function trTree(root){
 }
 new MutationObserver(ms=>{if(LANG!=="fr")return;ms.forEach(m=>m.addedNodes.forEach(trTree))}).observe(document.body,{childList:true,subtree:true});
 function applyLang(){document.documentElement.lang=LANG==="fr"?"fr":"ar";document.documentElement.dir=LANG==="fr"?"ltr":"rtl";$("#langBtn").textContent=LANG==="fr"?"ع":"FR";if(LANG==="fr")trTree(document.body)}
-function toggleLang(){LANG=LANG==="fr"?"ar":"fr";lsSet("salam_lang",LANG);try{const v={...view};delete v.dirty;sessionStorage.setItem("salam_view",JSON.stringify(v))}catch(e){}location.reload()}
+function toggleLang(){LANG=LANG==="fr"?"ar":"fr";lsSet("salam_lang",LANG);try{sessionStorage.setItem("salam_skip","1");const v={...view};delete v.dirty;sessionStorage.setItem("salam_view",JSON.stringify(v))}catch(e){}location.reload()}
 
 /* ================= boot ================= */
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();

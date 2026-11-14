@@ -66,7 +66,7 @@ function quickActions(){
   if(can.daily())A.push(["check","متابعة اليوم","go('daily',{date:today()})"],["award","رصد الدرجات","go('grades')"],["exam","اختبار تحفيظ","examForm()"]);
   if(can.finW())A.push(["wallet","تسجيل دفعة","go('finance',{tab:'fees'})"]);
   if(can.permit())A.push(["bed","إذن خروج","permitForm()"]);
-  A.push(["search","بحث","openSearch()"],["printer","التقارير","go('reports')"]);
+  A.push(["users","توزيع الصفوف","go('classes')"],["calendar","جدول الحصص","go('times')"],["search","بحث","openSearch()"],["printer","التقارير","go('reports')"]);
   return `<div class="qa">${A.map(a=>`<button onclick="${a[2]}"><i>${ICP[a[0]]?ico(a[0],22):a[0]}</i><span>${a[1]}</span></button>`).join("")}</div>`;
 }
 
