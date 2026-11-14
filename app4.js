@@ -24,9 +24,42 @@ function parseSheetRows(rows){
 }
 async function seedLoad(){const f=$("#sdF")&&$("#sdF").files[0];if(!f){toast("اختر الملف أولًا");return}
   try{let o;
-    if(/\.json$/i.test(f.name)||f.type.includes("json")){o=JSON.parse(await f.text());if(o.type!=="markaz-salam-seed"||!Array.isArray(o.h))throw 0}
+    if(/\.json$/i.test(f.name)||f.type.includes("json")){o=JSON.parse(await f.text());if(o.type==="markaz-salam-fr"&&Array.isArray(o.st)){SEED=o;closeModal();frOffer();return}if(o.type!=="markaz-salam-seed"||!Array.isArray(o.h))throw 0}
     else{toast("جارٍ قراءة ملف Excel…");await loadXLSX();const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const rows=[];wb.SheetNames.forEach(n=>rows.push(...XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null,raw:true})));o=parseSheetRows(rows);if(!o.h.length)throw 0}
     SEED=o;closeModal();seedOffer()}catch(e){toast("لم أتعرّف على الملف: اختر استمارة المتابعة (Excel) أو ملف البيانات")}}
+function frOffer(){if(!can.write())return;const by={};SEED.st.forEach(r=>by[r.c]=(by[r.c]||0)+1);
+  modal("📥 توزيع صفوف الفرنسية",`<p>وُجد <b>${SEED.st.length}</b> طالبًا موزَّعين على الصفوف:</p><ul style="line-height:2">${Object.entries(by).map(([c,n])=>`<li>${esc(c)}: <b>${n}</b></li>`).join("")}</ul><div class="fld"><label>القسم</label><select id="sdSec"><option value="b" ${SEED.sec==="b"?"selected":""}>قسم البنين</option><option value="g" ${SEED.sec!=="b"?"selected":""}>قسم البنات</option></select></div><p class="note">من كان مسجَّلًا (بالعربية أو بالفرنسية) يُحدَّث صفُّه في الفرنسية ويُكتب اسمه الفرنسي، ومن لم يوجد يُضاف طالبًا جديدًا.</p>`,
+   `<button class="btn p" onclick="frRun()">اعتماد التوزيع</button><button class="btn o" onclick="closeModal()">إلغاء</button>`)}
+async function frRun(){const SX=($("#sdSec")&&$("#sdSec").value)||"g";closeModal();const oldSec=SEC;SEC=SX;document.body.dataset.sec=SX;window.__bulk=1;let nS=0,nU=0;const used=new Set();
+  try{const k=x=>normName(x||"").toLowerCase();
+    for(const r of SEED.st){const cand=[...(r.ar||[]),r.n].map(k);
+      let s=null;for(const c of cand){s=RAW.people.find(p=>p.cat==="students"&&secOf(p,"people")===SX&&!used.has(p.id)&&(k(p.name)===c||k(p.nameFr)===c));if(s)break}
+      if(s){used.add(s.id);await put("people",{...s,frClass:r.c,nameFr:s.nameFr||r.n});nU++}
+      else{const n={id:uid("p"),cat:"students",name:r.n,nameFr:r.n,gender:SX==="g"?"أنثى":"ذكر",status:"نشط",frClass:r.c,regNo:nextReg("students"),start:today(),sec:SX};used.add(n.id);await put("people",n);nS++}}
+    toast(`✓ تم: ${nU} طالبًا حُدِّث صفُّه في الفرنسية، ${nS} طالبًا جديدًا`);SEED=null}catch(e){saveErr(e)}finally{window.__bulk=0;SEC=oldSec;document.body.dataset.sec=SEC;render()}}
+/* ---------- توزيع الصفوف (قابل للإضافة والتعديل والحذف) ---------- */
+const clsKey=()=>(view.cd||"fr")==="ar"?"arClass":"frClass";
+function vClasses(){const key=clsKey(),w=can.write(),st=activeStudents().sort(byName),dn=(view.cd||"fr")==="ar"?"العربية والتربية الإسلامية":"الفرنسية والمواد العصرية";
+  const grp=(c,t)=>{const l=st.filter(s=>(s[key]||"")===c);
+    return `<div class="panel" style="margin:0"><h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>${esc(t)} <small style="color:var(--m)">(${l.length})</small></span>${w&&c?`<button class="btn p s" onclick="clsAdd('${c}')">＋ إضافة</button>`:""}</h3>
+    ${l.length?l.map((s,i)=>`<div class="row" style="gap:6px"><span style="width:22px;color:var(--m)">${i+1}</span><div class="grow" onclick="openDetail('${s.id}')" style="cursor:pointer">${pn(s)}</div>${w?`<select style="max-width:96px" onchange="clsMove('${s.id}',this.value)"><option value="">نقل…</option>${CLASSES.filter(x=>x!==c).map(x=>`<option value="${x}">${esc(x.replace("الصف ","").replace(" الابتدائي"," ابتدائي").replace(" الإعدادي"," إعدادي"))}</option>`).join("")}</select><button class="btn o s" title="تعديل" onclick="openForm('students','${s.id}')">✏️</button><button class="btn o s" title="إخراج من الصف" onclick="clsMove('${s.id}','')">✕</button>`:""}</div>`).join(""):`<div class="note">لا يوجد طلاب</div>`}</div>`};
+  const none=st.filter(s=>!s[key]);
+  return `<div class="sec-title"><h2>👥 توزيع الصفوف — ${dn}</h2></div>
+  <div class="subtabs"><button class="${(view.cd||"fr")==="fr"?"on":""}" onclick="view.cd='fr';render()">الفرنسية والمواد العصرية</button><button class="${view.cd==="ar"?"on":""}" onclick="view.cd='ar';render()">العربية والتربية الإسلامية</button></div>
+  <p class="note">إجمالي الطلاب: <b>${st.length}</b> — الموزَّعون: <b>${st.length-none.length}</b> — بلا صف: <b>${none.length}</b>. اضغط على الاسم لفتح الملف. ولكل طالب: نقل إلى صف آخر، تعديل (الاسم بالعربية والفرنسية)، أو إخراج من الصف.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">${CLASSES.map(c=>grp(c,c)).join("")}</div>
+  ${none.length?`<div style="margin-top:10px">${grp("","بلا صف")}</div>`:""}`}
+async function clsMove(id,c){const s=byName_(id);if(!s)return;try{await put("people",{...s,[clsKey()]:c});toast(c?"✓ تم النقل":"✓ أُخرج من الصف");render()}catch(e){saveErr(e)}}
+const byName_=id=>RAW.people.find(p=>p.id===id);
+function clsAdd(c){const key=clsKey(),cand=activeStudents().filter(s=>(s[key]||"")!==c).sort(byName);
+  modal("＋ إضافة إلى "+c,`<div class="fld"><label>طالب مسجَّل</label><select id="caS"><option value="">— اختر —</option>${cand.map(s=>`<option value="${s.id}">${esc(pnT(s))}${s[key]?" — ("+esc(s[key].replace("الصف ",""))+")":""}</option>`).join("")}</select></div>
+  <p class="note" style="text-align:center">أو أضف طالبًا جديدًا:</p><div class="grid"><div class="fld"><label>الاسم بالعربية</label><input id="caA"></div><div class="fld"><label>الاسم بالفرنسية — Nom en français</label><input id="caF" dir="ltr"></div></div>`,
+  `<button class="btn p" onclick="clsAddSave('${c}')">حفظ</button><button class="btn o" onclick="closeModal()">إلغاء</button>`)}
+async function clsAddSave(c){const key=clsKey(),id=$("#caS").value,a=$("#caA").value.trim(),f=$("#caF").value.trim();
+  try{if(id){const s=byName_(id);await put("people",{...s,[key]:c})}
+    else if(a||f){await put("people",{id:uid("p"),cat:"students",name:a||f,nameFr:f,gender:SEC==="g"?"أنثى":"ذكر",status:"نشط",[key]:c,regNo:nextReg("students"),start:today(),sec:SEC})}
+    else{toast("اختر طالبًا أو اكتب اسمًا");return}
+    closeModal();toast("✓ تمت الإضافة");render()}catch(e){saveErr(e)}}
 function seedCount(){return SEED.h.reduce((a,h)=>a+h.st.length,0)}
 function seedOffer(){
   if(!can.write())return;
