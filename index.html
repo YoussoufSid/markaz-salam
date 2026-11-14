@@ -414,7 +414,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
   <div class="halo"><img src="icon-192.png" alt="شعار المركز"></div>
   <div class="mflag"><i style="background:#14b53a"></i><i style="background:#fcd116"></i><i style="background:#ce1126"></i></div>
   <h1 class="wel cName">مركز السلام للدراسات القرآنية</h1>
-  <div class="wfr cNameFr" dir="ltr">Centre As-Salam d'Études Coraniques</div>
+  <div class="wfr cNameFr" dir="ltr">Markaz Salam pour les études Coraniques</div>
   <div class="loc cLoc">كوروفينا سود – باماكو</div>
   <div class="orn">❀ &nbsp; ❀ &nbsp; ❀</div>
   <div class="salat">اللهم صلِّ وسلِّم وبارك على نبينا محمد، وعلى آله وصحبه أجمعين <span class="saw">ﷺ</span></div>
@@ -425,7 +425,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
 </div>
 <div id="gate" class="hide" data-notr onclick="if(this.classList.contains('ex'))gateDone()">
   <div class="gstage"><img src="gate.jpg" alt="بوابة المركز"><div class="ginsc"><div class="gl">بوابة الدخول</div><div class="gv">﴿ادْخُلُوهَا بِسَلَامٍ آمِنِينَ﴾</div><div class="gr">سورة الحجر، الآية 46</div></div></div>
-  <div class="gtop"><img src="icon-192.png" alt=""><div><b class="cName">مركز السلام للدراسات القرآنية</b><span class="cNameFr" dir="ltr">Centre As-Salam d'Études Coraniques</span></div></div>
+  <div class="gtop"><img src="icon-192.png" alt=""><div><b class="cName">مركز السلام للدراسات القرآنية</b><span class="cNameFr" dir="ltr">Markaz Salam pour les études Coraniques</span></div></div>
   <div class="gbot"><div class="gwel">مرحبًا بكم<span dir="ltr">Bienvenue</span></div><div class="gmsg"></div><button class="enter" onclick="event.stopPropagation();gateGo()">ادخل ←</button></div>
 </div>
 </div>
@@ -597,7 +597,8 @@ const nmSub=p=>p&&p.nameFr?`<span class="nfr2" dir="ltr">${esc(p.nameFr)}</span>
 function nmPick(){const m=NMODE();return `<select title="لغة الأسماء في الوثائق" onchange="lsSet('salam_nm',this.value);render()">${[["ar","الأسماء بالعربية"],["fr","الأسماء بالفرنسية"],["both","الأسماء بالعربية والفرنسية"]].map(([k,l])=>`<option value="${k}" ${m===k?"selected":""}>${l}</option>`).join("")}</select>`}
 const studentsOf=h=>activeStudents().filter(s=>s.halaqa===h.name).sort(byName);
 function setStatus(m){const e=$("#status");e.textContent=m.split(" — ")[0];e.title=m;e.className="chip st"+(/تعذّر|خطأ|غير مخوّل|لا صلاحية/.test(m)?" off":"")}
-function applyCenter(){document.querySelectorAll(".cName").forEach(e=>e.textContent=center.name);document.querySelectorAll(".cNameFr").forEach(e=>e.textContent=center.nameFr||"Centre As-Salam d'Études Coraniques");const fd=postName("founder");document.querySelectorAll(".fdua").forEach(e=>e.textContent=fd?`اللهم بارِك في مؤسِّسة هذا المركز ${fd}، واحفظها، واجزِها عنّا وعن طلاب العلم خير الجزاء، واجعل هذا العمل في ميزان حسناتها — آمين ❀`:"اللهم بارك في هذا المركز وفي القائمين عليه — آمين ❀");document.querySelectorAll(".cLoc").forEach(e=>e.textContent=center.loc)}
+const FR_NAME="Markaz Salam pour les études Coraniques";const frName=()=>center.nameFr&&!/^centre as-salam/i.test(center.nameFr)?center.nameFr:FR_NAME;
+function applyCenter(){document.querySelectorAll(".cName").forEach(e=>e.textContent=center.name);document.querySelectorAll(".cNameFr").forEach(e=>e.textContent=frName());const fd=postName("founder");document.querySelectorAll(".fdua").forEach(e=>e.textContent=fd?`اللهم بارِك في مؤسِّسة هذا المركز ${fd}، واحفظها، واجزِها عنّا وعن طلاب العلم خير الجزاء، واجعل هذا العمل في ميزان حسناتها — آمين ❀`:"اللهم بارك في هذا المركز وفي القائمين عليه — آمين ❀");document.querySelectorAll(".cLoc").forEach(e=>e.textContent=center.loc)}
 
 async function put(col,obj){
   if(!canCol(col)){toast("ليست لديك صلاحية لهذا الإجراء");throw {code:"permission-denied"}}
@@ -1252,7 +1253,7 @@ function openSettings(){
     <div class="fld full"><label>مواد قسم الفرنسية والمواد العصرية مع المعامل (Matière:coef)</label><textarea name="subj_fr" rows="2" dir="ltr" ${w?"":"disabled"}>${esc(center.subj_fr||DEF_SUBJ.fr)}</textarea></div>
     <div class="fld"><label>الدرجة القصوى — القسم العربي</label><input name="max_ar" type="number" min="1" value="${esc(center.max_ar||10)}" ${w?"":"disabled"}></div>
     <div class="fld"><label>الدرجة القصوى — القسم الفرنسي</label><input name="max_fr" type="number" min="1" value="${esc(center.max_fr||10)}" ${w?"":"disabled"}></div>
-    <div class="fld full"><label>اسم المركز بالفرنسية (للشهادات الفرنسية)</label><input name="nameFr" dir="ltr" value="${esc(center.nameFr||"Centre As-Salam d'Études Coraniques")}" ${w?"":"disabled"}></div>
+    <div class="fld full"><label>اسم المركز بالفرنسية (للشهادات الفرنسية)</label><input name="nameFr" dir="ltr" value="${esc(frName())}" ${w?"":"disabled"}></div>
     <div class="fld"><label>بداية السنة الدراسية</label><input name="yearStart" type="date" value="${esc(center.yearStart||"")}" ${w?"":"disabled"}></div>
     <div class="fld"><label>لغة أسماء الطلاب في الوثائق (الافتراضي)</label><select name="nameMode" ${w?"":"disabled"}>${[["both","بالعربية والفرنسية معًا"],["ar","بالعربية فقط"],["fr","بالفرنسية فقط"]].map(([k,l])=>`<option value="${k}" ${(center.nameMode||"both")===k?"selected":""}>${l}</option>`).join("")}</select></div>
     <div class="grp">🏛️ الهيكل الإداري (تظهر الأسماء في التوقيعات والإيصالات)</div>
