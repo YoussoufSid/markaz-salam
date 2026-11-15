@@ -617,7 +617,9 @@ async function del(col,id){
   if(FS){await FS.collection(col).doc(id).delete();if(old&&typeof logAct==="function")logAct("حذف",col,old);return}
   RAW[col]=RAW[col].filter(x=>x.id!==id);lsSet(lsKey(col),RAW[col]);if(old&&typeof logAct==="function")logAct("حذف",col,old);render();
 }
-async function saveCenter(c){center=c;applyCenter();if(FS)await FS.doc("settings/center").set(c);else lsSet("salam_center_v1",c)}
+const ttPack=c=>{const o={...c};Object.keys(o).forEach(k=>{if(/^tt_/.test(k)&&o[k]&&typeof o[k]!=="string")o[k]=JSON.stringify(o[k])});return JSON.parse(JSON.stringify(o))};
+const ttUnpack=c=>{const o={...c};Object.keys(o).forEach(k=>{if(/^tt_/.test(k)&&typeof o[k]==="string"){try{o[k]=JSON.parse(o[k])}catch(e){delete o[k]}}});return o};
+async function saveCenter(c){center=c;applyCenter();if(FS)await FS.doc("settings/center").set(ttPack(c));else lsSet("salam_center_v1",c)}
 async function fetchRange(col,field,from,to){
   if(!FS)return D[col].filter(x=>(x[field]||"")>=from&&(x[field]||"")<=to);
   const s=SECLOCK?await FS.collection(col).where("sec","==",SEC).get():await FS.collection(col).where(field,">=",from).where(field,"<=",to).get();
@@ -683,7 +685,7 @@ function subscribe(){
       scheduleRender();
     },e=>{clearTimeout(timer);setStatus(e.code==="permission-denied"?"لا صلاحية لقراءة بعض البيانات":"خطأ: "+e.code)});
   });
-  FS.doc("settings/center").onSnapshot(s=>{if(s.exists){center={...center,...s.data()};applyCenter();scheduleRender()}},()=>{});
+  FS.doc("settings/center").onSnapshot(s=>{if(s.exists){center={...center,...ttUnpack(s.data())};applyCenter();scheduleRender()}},()=>{});
 }
 
 /* ================= navigation ================= */
