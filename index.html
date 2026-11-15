@@ -641,6 +641,7 @@ async function init(){
 async function initCloud(){
   firebase.initializeApp(FIREBASE_CONFIG);
   const fs=firebase.firestore();
+  try{fs.settings({experimentalAutoDetectLongPolling:true,merge:true})}catch(e){}
   try{await fs.enablePersistence({synchronizeTabs:true})}catch(e){}
   setStatus("جارٍ التحقق من الحساب…");
   firebase.auth().onAuthStateChanged(u=>{
@@ -670,7 +671,7 @@ function subscribe(){
   if(ROLE==="guard")subs.splice(0,subs.length,["people"],["permits",["date",">=",f0]]);else if(!can.data())subs.length=0;
   if(can.log())subs.push(["logs",["date",">=",t0]]);if(can.write())subs.push(["trash",["date",">=",addMonths(monthOf(today()),-2)+"-01"]]);
   if(can.fin())subs.push(["finance",["date",">=",f0]],["staffatt",["date",">=",t0]]);
-  let first=true;const timer=setTimeout(()=>setStatus("تعذّر الوصول إلى قاعدة البيانات — قد تكون البيانات غير محدّثة"),10000);
+  let first=true;const timer=setTimeout(()=>setStatus(navigator.onLine?"تعذّر الوصول إلى قاعدة البيانات — أعد تحميل الصفحة":"لا يوجد اتصال بالإنترنت"),15000);
   subs.forEach(([col,q])=>{
     let ref=FS.collection(col);if(SECLOCK)ref=ref.where("sec","==",SECLOCK);else if(q)ref=ref.where(...q);
     ref.onSnapshot(s=>{
