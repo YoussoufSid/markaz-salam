@@ -34,7 +34,7 @@ async function frRun(){const SX=($("#sdSec")&&$("#sdSec").value)||"g";closeModal
   try{const k=x=>normName(x||"").toLowerCase();
     for(const r of SEED.st){const cand=[...(r.ar||[]),r.n].map(k);
       let s=null;for(const c of cand){s=RAW.people.find(p=>p.cat==="students"&&secOf(p,"people")===SX&&!used.has(p.id)&&(k(p.name)===c||k(p.nameFr)===c));if(s)break}
-      if(s){used.add(s.id);await put("people",{...s,frClass:r.c,nameFr:s.nameFr||r.n});nU++}
+      if(s){used.add(s.id);const ar0=(r.ar||[])[0],lat=ar0&&k(s.name)===k(r.n);await put("people",{...s,...(lat?{name:ar0}:{}),frClass:r.c,nameFr:s.nameFr||r.n});nU++}
       else{const n={id:uid("p"),cat:"students",name:r.n,nameFr:r.n,gender:SX==="g"?"أنثى":"ذكر",status:"نشط",frClass:r.c,regNo:nextReg("students"),start:today(),sec:SX};used.add(n.id);await put("people",n);nS++}}
     toast(`✓ تم: ${nU} طالبًا حُدِّث صفُّه في الفرنسية، ${nS} طالبًا جديدًا`);SEED=null}catch(e){saveErr(e)}finally{window.__bulk=0;SEC=oldSec;document.body.dataset.sec=SEC;render()}}
 /* ---------- توزيع الصفوف (قابل للإضافة والتعديل والحذف) ---------- */
