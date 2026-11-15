@@ -1,6 +1,6 @@
 // إعدادات قاعدة البيانات السحابية (Firebase) — هذه المفاتيح ليست سرّية، والأمان تضمنه قواعد firestore.rules
 window.FIREBASE_CONFIG = {
-  apiKey: "AIzaSyC0pgJSK8P-DXpe95mAqXG90QPG1tpD6W4",
+  apiKey: "AIzaSyCOpgJSK8P-DXpe95mAqXG9OQPG1tpD6W4",
   authDomain: "markaz-salam.firebaseapp.com",
   projectId: "markaz-salam",
   storageBucket: "markaz-salam.firebasestorage.app",
