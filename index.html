@@ -624,7 +624,7 @@ async function fetchRange(col,field,from,to){
   return s.docs.map(d=>({id:d.id,...d.data()})).filter(inSec(col)).filter(x=>(x[field]||"")>=from&&(x[field]||"")<=to);
 }
 function nextReg(cat){const y=new Date().getFullYear(),pre=CATS[cat].p+"-"+(SEC==="g"?"2":"1")+"-"+y+"-";let mx=0;D.people.filter(p=>p.cat===cat&&(p.regNo||"").startsWith(pre)).forEach(p=>{const n=parseInt(p.regNo.slice(pre.length));if(n>mx)mx=n});return pre+pad2(mx+1).padStart(4,"0")}
-function saveErr(e){toast(e&&e.code==="permission-denied"?"ليست لديك صلاحية لهذا الإجراء":"تعذّر الحفظ"+(e&&e.code?": "+e.code:""))}
+function saveErr(e){try{console.error("saveErr",e)}catch(_){}toast(e&&e.code==="permission-denied"?"ليست لديك صلاحية لهذا الإجراء":"تعذّر الحفظ"+(e&&(e.code||e.message)?": "+(e.code||String(e.message).slice(0,90)):""))}
 
 /* render scheduling: never re-render under the user's typing */
 let pendingRender=false;
