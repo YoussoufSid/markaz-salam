@@ -445,7 +445,18 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
   <div class="fld" style="text-align:start;margin-bottom:14px"><label>كلمة المرور</label><input name="pass" type="password" dir="ltr" required autocomplete="current-password"></div>
   <button class="btn p" style="width:100%">دخول</button><button type="button" class="btn o" style="width:100%;margin-top:8px" onclick="visitorIn()">👁 دخول الزوار — بدون رقم ولا كلمة مرور</button>
   <div id="lgM" style="color:var(--red);min-height:20px;margin-top:10px;font-size:14px"></div>
+  <button type="button" class="btn o" style="width:100%;margin-top:8px" onclick="signupToggle(1)">📝 طلب حساب جديد</button>
   <div class="note">نسيت كلمة المرور؟ تواصل مع إدارة المركز لإعادة تعيينها.</div><a href="#" onclick="resetPass();return false" style="font-size:12px;color:var(--mut)">إرسال رابط إلى البريد (لأصحاب البريد فقط)</a>
+ </form>
+ <form id="sgf" class="hide" onsubmit="return doSignup(event)" style="background:#fff;color:var(--tx);border-radius:18px;padding:24px;width:100%;max-width:360px">
+  <h2 style="font-family:Amiri,serif;color:var(--g);margin:0 0 12px">طلب حساب جديد</h2>
+  <div class="fld" style="text-align:start;margin-bottom:10px"><label>الاسم الكامل</label><input name="name" required></div>
+  <div class="fld" style="text-align:start;margin-bottom:10px"><label>المنصب المطلوب</label><select name="post">%%POSTOPTS%%</select></div>
+  <div class="fld" style="text-align:start;margin-bottom:10px"><label>رقم الهاتف أو البريد الإلكتروني</label><input name="email" type="text" inputmode="email" dir="ltr" required autocomplete="username"></div>
+  <div class="fld" style="text-align:start;margin-bottom:14px"><label>كلمة المرور (8 أحرف على الأقل)</label><input name="pass" type="password" dir="ltr" required minlength="8" autocomplete="new-password"></div>
+  <button class="btn p" style="width:100%">إرسال الطلب</button><button type="button" class="btn o" style="width:100%;margin-top:8px" onclick="signupToggle(0)">رجوع إلى الدخول</button>
+  <div id="sgM" style="color:var(--red);min-height:20px;margin-top:10px;font-size:14px"></div>
+  <div class="note">يُفعَّل حسابك بعد موافقة إدارة المركز.</div>
  </form></div>
 
 <div id="upd" class="hide"><span style="flex:1">🔄 تحديث جديد جاهز — سيُثبَّت تلقائيًا بعد حفظ عملك</span><button class="btn p" onclick="location.reload()">تثبيت الآن</button></div>
@@ -657,7 +668,8 @@ async function initCloud(){
       ROLE=owner?"owner":(Object.entries(ROLEARR).find(([r,k])=>(ACCESS[k]||[]).includes(ME))||["none"])[0];
       if(ROLE==="parent"){if(!started){started=true;subscribePortal()}view={name:"kids"};render();return}
       const us=owner?"all":((ACCESS.sec||{})[ME]||"all");SECLOCK=us==="all"?"":us;if(SECLOCK&&SEC!==SECLOCK){SEC=SECLOCK;document.body.dataset.sec=SEC}
-      if(ROLE==="none"){setStatus("حسابك غير مخوّل بعد — اطلب من المسؤول إضافتك");render();return}
+      if(owner&&!window.__reqSub){window.__reqSub=1;fs.collection("requests").onSnapshot(q=>{REQS=q.docs.map(d=>({id:d.id,...d.data()}));scheduleRender()},()=>{})}
+      if(ROLE==="none"){setStatus("حسابك غير مخوّل بعد — اطلب من المسؤول إضافتك");reqWatch();render();return}
       if(!started){started=true;subscribe()}
       render();
     },()=>setStatus("تعذّر قراءة الصلاحيات"));
@@ -716,7 +728,7 @@ const TOP={kids:"kids",grades:"grades",board:"board",student:"people",home:"home
 function go(name,extra){if(view.dirty){confirmDiscard(()=>{view={name,...(extra||{})};render();scrollTo(0,0)});return}view={name,...(extra||{})};render();scrollTo(0,0)}
 function confirmDiscard(fn){modal("تعديلات غير محفوظة","<p>لديك تعديلات لم تُحفظ في المتابعة. هل تريد تجاهلها؟</p>",`<button class="btn d" id="cdY">تجاهل</button><button class="btn o" onclick="closeModal()">رجوع</button>`);$("#cdY").onclick=()=>{view.dirty=false;closeModal();fn()}}
 function render(){
-  if(ROLE==="none"){$("#nav").innerHTML="";$("#qbtn").style.display="none";$("#app").innerHTML=`<div class="empty">حسابك غير مخوّل بعد — اطلب من مسؤول المركز إضافتك.<br><br><button class="btn o" onclick="logout()">تسجيل الخروج</button></div>`;return}
+  if(ROLE==="none"){$("#nav").innerHTML="";$("#qbtn").style.display="none";$("#app").innerHTML=noneHTML();return}
   try{const sv=sessionStorage.getItem("salam_view");if(sv){sessionStorage.removeItem("salam_view");if(view.name==="home")view=JSON.parse(sv)}}catch(e){}
   renderShell();if(typeof renderBottom==="function")renderBottom();
   if(ROLE==="parent"){view={name:"kids"};}
@@ -779,6 +791,7 @@ function vHome(){
   if(can.fin()&&(num(fee("monthlyFee"))||D.people.some(p=>num(p.monthlyFee)))){{const un=st.filter(s=>feeOf(s)>paidFor(s.id,m));if(un.length){n++;h+=`<div class="alert w">${un.length} طالبًا لم يُكملوا رسوم ${monthName(m)} — <a href="#" onclick="go('finance',{tab:'fees',month:'${m}',only:1});return false">عرض القائمة</a></div>`}}}
   if(!FS&&D.people.length){const lb=lsGet("salam_lastbackup",null);const days=lb?Math.floor((Date.now()-new Date(lb))/864e5):999;if(days>=7){n++;h+=`<div class="alert w">💾 ${lb?"آخر نسخة احتياطية منذ "+days+" يومًا":"لم تُحفظ أي نسخة احتياطية بعد"} — البيانات محفوظة في هذا الجهاز فقط. <a href="#" onclick="backupDialog();return false">احفظ نسخة الآن</a></div>`}}
   const lateP=(D.permits||[]).filter(p=>p.status==="خارج"&&p.until&&p.until<nowLocal());if(lateP.length){n++;h+=`<div class="alert r">🚪 تأخر عن العودة إلى القسم الداخلي: ${lateP.map(p=>esc(p.studentName)).join("، ")} — <a href="#" onclick="go('board',{btab:'permits'});return false">عرض</a></div>`}
+  if(ROLE==="owner"){const pq=(typeof REQS!=="undefined"?REQS:[]).filter(r=>(r.status||"pending")==="pending");if(pq.length){n++;h+=`<div class="alert w">🔔 ${pq.length} طلب دخول جديد بانتظار موافقتك — <a href="#" onclick="openSettings();return false">مراجعة الطلبات</a></div>`}}
   const noH=st.filter(s=>!s.halaqa);if(noH.length&&D.halaqat.length){n++;h+=`<div class="alert w">${noH.length} طالبًا غير مسندين إلى حلقة.</div>`}
   if(!n)h+=`<div class="alert ok">لا توجد تنبيهات — الحمد لله.</div>`;
   h=h.replace("%%N%%",n||"0");
@@ -1283,7 +1296,7 @@ function postFill(f){const k=f.post.value;if(ONEPOST.includes(k)&&postName(k)&&!
 function usersHTML(){
   const all=Object.values(ROLEARR).flatMap(k=>(ACCESS[k]||[]).map(e=>[e,k])),P=ACCESS.posts||{},N=ACCESS.names||{};
   const ord=e=>{const i=POSTS.findIndex(p=>p[0]===P[e]);return i<0?99:i};all.sort((a,b)=>ord(a[0])-ord(b[0]));
-  return `<div class="grp" style="margin-top:16px">المستخدمون والصلاحيات</div><div class="list" style="margin:8px 0">${all.map(([e,k])=>`<div class="row"><div class="grow"><div class="nm">${esc(N[e]||showId(e))}</div><div class="mt">${esc((POST[P[e]]||{}).l||"")} · <span dir="ltr">${esc(showId(e))}</span> · ${ROLES[k]} · ${({b:"قسم البنين",g:"قسم البنات"})[(ACCESS.sec||{})[e]]||"القسمان"}</div></div><button class="btn o s" onclick="removeUser('${esc(e)}')">إزالة</button></div>`).join("")||'<div class="note">لا يوجد مستخدمون غيرك بعد.</div>'}</div>
+  return reqHTML()+`<div class="grp" style="margin-top:16px">المستخدمون والصلاحيات</div><div class="list" style="margin:8px 0">${all.map(([e,k])=>`<div class="row"><div class="grow"><div class="nm">${esc(N[e]||showId(e))}</div><div class="mt">${esc((POST[P[e]]||{}).l||"")} · <span dir="ltr">${esc(showId(e))}</span> · ${ROLES[k]} · ${({b:"قسم البنين",g:"قسم البنات"})[(ACCESS.sec||{})[e]]||"القسمان"}</div></div><button class="btn o s" onclick="removeUser('${esc(e)}')">إزالة</button></div>`).join("")||'<div class="note">لا يوجد مستخدمون غيرك بعد.</div>'}</div>
   <form id="uf" class="grid" onsubmit="return false"><div class="fld"><label>المنصب</label><select name="post" onchange="postFill(this.form)">${postOpts("teacher")}</select><span class="note phint">الصلاحيات: ${RLV.teacher}</span></div><div class="fld"><label>الاسم</label><input name="name"></div><div class="fld"><label>رقم الهاتف أو البريد الإلكتروني</label><input name="email" type="text" dir="ltr" placeholder="70 00 00 00"></div><div class="fld"><label>كلمة المرور (8 أحرف فأكثر)</label><input name="pass" type="text" dir="ltr"></div>
   <div class="fld"><label>القسم</label><select name="usec"><option value="all">القسمان معًا</option><option value="b">قسم البنين فقط</option><option value="g">قسم البنات فقط</option></select></div><div class="fld" style="align-self:end"><button class="btn p" style="width:100%" onclick="addUser()">＋ إضافة مستخدم</button></div></form>
   <p class="note">• يدخل كل مستخدم برقم هاتفه (أو بريده) وكلمة المرور التي تحددها له هنا، ولا يرى إلا ما يسمح به منصبه.<br>• للمدرس: اكتب رقم هاتفه أو بريده في خانة «البريد» في بياناته، فتظهر له حلقاته فقط.<br>• لولي الأمر: أضفه برقم الهاتف المسجَّل في «هاتف ولي الأمر» عند أبنائه، فيرى أبناءه فقط، ثم اضغط «تحديث بوابة أولياء الأمور».</p><button class="btn o" onclick="syncPortal(activeStudents().map(s=>s.id),true)">🔄 تحديث بوابة أولياء الأمور</button>`;
@@ -1560,6 +1573,7 @@ async function wipeAll(){try{localStorage.removeItem(PK);localStorage.removeItem
 document.addEventListener("visibilitychange",()=>{if(document.hidden)hiddenAt=Date.now();else if(hasPin()&&lockMin()>0&&hiddenAt&&Date.now()-hiddenAt>lockMin()*60000)showLock("unlock")});
 function changePin(){closeModal();if(!CUR)CUR=lusers()[0];showLock("change")}
 /* visitors: no number, no PIN — home page only */
+function signupInit(){const f=$("#sgf");if(f&&!f.dataset.ok){const sel=f.querySelector("select");sel.innerHTML=POSTS.filter(p=>!["visitor","founder","dg"].includes(p[0])&&p[0]!=="parent").map(([k,l])=>`<option value="${k}" ${k==="teacher"?"selected":""}>${l}</option>`).join("")+`<option value="dg">المدير العام</option>`;f.dataset.ok=1}}
 function visitorIn(){CUR={id:"visitor",name:"زائر",role:"visitor",post:"visitor",sec:"all"};ROLE="visitor";ME="زائر";SECLOCK="";$("#lock").dataset.ok="1";$("#lock").classList.add("hide");$("#login").classList.add("hide");view={name:"home"};render();toast("مرحبًا بك في "+center.name)}
 function visitorOut(){document.body.classList.remove("menu");if(window.FIREBASE_CONFIG&&!FS){location.reload();return}CUR=null;ROLE=FS?"none":"local";delete $("#lock").dataset.ok;SELU=null;showLock("unlock")}
 function switchUser(){document.body.classList.remove("menu");SELU=null;showLock("unlock")}

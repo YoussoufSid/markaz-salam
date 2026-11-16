@@ -192,3 +192,45 @@ function homeWeekly(){
     return `<tr><td>${esc(x.name)}</td><td class="c">${n}</td><td class="c">${dl.length||"—"}</td><td class="c">${tot?Math.round(pres/tot*100)+"%":"—"}</td><td class="c">${hifz||"—"}</td><td class="c">${rev||"—"}</td></tr>`}).join("");
   return `<div class="panel"><h3>📅 ملخص الأسبوع (آخر 7 أيام)</h3><div class="scroll"><table class="tbl"><tr><th>الحلقة</th><th class="c">الطلاب</th><th class="c">أيام المتابعة</th><th class="c">الحضور</th><th class="c">مرات الحفظ</th><th class="c">مرات المراجعة</th></tr>${rows}</table></div></div>`;
 }
+
+/* ---------- طلبات الدخول: تقديم الطلب وقبوله ---------- */
+var REQS=[],REQ_ME=null;
+function signupToggle(on){signupInit();$("#sgf").classList.toggle("hide",!on);const lf=$("#login form");lf.classList.toggle("hide",!!on);$("#sgM").textContent=""}
+async function doSignup(e){
+  e.preventDefault();const f=new FormData(e.target),m=$("#sgM");m.textContent="";
+  const name=String(f.get("name")||"").trim(),em=loginId(f.get("email")),pw=String(f.get("pass")||""),post=String(f.get("post")||"teacher");
+  if(!name){m.textContent="الاسم مطلوب";return false}
+  if(pw.length<8){m.textContent="كلمة المرور 8 أحرف على الأقل";return false}
+  try{sessionStorage.setItem("salam_req",JSON.stringify({name,post}));await firebase.auth().createUserWithEmailAndPassword(em,pw)}
+  catch(err){sessionStorage.removeItem("salam_req");m.textContent=err.code==="auth/email-already-in-use"?"هذا الرقم/البريد مسجَّل من قبل — ارجع وادخل بكلمة مرورك":err.code==="auth/weak-password"?"كلمة المرور ضعيفة":err.code==="auth/invalid-email"?"الرقم أو البريد غير صحيح":/network/.test(err.code||"")?"لا يوجد اتصال بالإنترنت":"تعذّر إرسال الطلب: "+(err.code||"")}
+  return false;
+}
+function reqWatch(){
+  if(window.__reqW||!FS||!ME)return;window.__reqW=1;
+  try{const p=JSON.parse(sessionStorage.getItem("salam_req")||"null");
+    if(p){sessionStorage.removeItem("salam_req");FS.doc("requests/"+ME).set({email:ME,name:p.name,post:p.post,status:"pending",ts:new Date().toISOString()}).catch(()=>{})}}catch(e){}
+  FS.doc("requests/"+ME).onSnapshot(s=>{REQ_ME=s.exists?s.data():null;if(ROLE==="none")render()},()=>{});
+}
+function noneHTML(){
+  const st=REQ_ME&&(REQ_ME.status||"pending");
+  const out=`<br><br><button class="btn o" onclick="logout()">تسجيل الخروج</button>`;
+  if(st==="pending")return `<div class="empty">⏳ طلب دخولك قيد المراجعة من إدارة المركز.<br>سيُفعَّل حسابك تلقائيًا بعد الموافقة — أبقِ التطبيق مفتوحًا أو ارجع إليه لاحقًا.${out}</div>`;
+  if(st==="مرفوض")return `<div class="empty">تعذّر قبول طلبك. تواصل مع إدارة المركز.${out}</div>`;
+  return `<div class="empty"><p>حسابك غير مخوّل بعد. أرسل طلب دخول لتراجعه الإدارة:</p><form id="nqf" class="grid" style="max-width:340px;margin:10px auto" onsubmit="return false"><div class="fld"><label>الاسم الكامل</label><input name="name"></div><div class="fld"><label>المنصب المطلوب</label><select name="post">${POSTS.filter(p=>!["visitor","parent","founder"].includes(p[0])).map(([k,l])=>`<option value="${k}" ${k==="teacher"?"selected":""}>${l}</option>`).join("")}</select></div><button class="btn p" onclick="sendReqForm()">إرسال الطلب</button></form>${out}</div>`;
+}
+async function sendReqForm(){const f=readForm("nqf");if(!String(f.name||"").trim()){toast("اكتب اسمك");return}try{await FS.doc("requests/"+ME).set({email:ME,name:f.name.trim(),post:f.post,status:"pending",ts:new Date().toISOString()});toast("أُرسل الطلب")}catch(e){saveErr(e)}}
+function reqHTML(){
+  const l=(REQS||[]).filter(r=>(r.status||"pending")==="pending");
+  if(!l.length)return "";
+  return `<div class="grp" style="margin-top:16px">🔔 طلبات الدخول (${l.length})</div><div class="list" style="margin:8px 0">${l.map(r=>`<div class="row"><div class="grow"><div class="nm">${esc(r.name||"")}</div><div class="mt"><span dir="ltr">${esc(showId(r.id))}</span> · يطلب: ${esc((POST[r.post]||{}).l||"")}</div></div><button class="btn p s" onclick="reqAccept('${esc(r.id)}')">قبول</button><button class="btn d s" onclick="reqReject('${esc(r.id)}')">رفض</button></div>`).join("")}</div>`;
+}
+function reqAccept(id){
+  const r=REQS.find(x=>x.id===id);if(!r)return;
+  modal("قبول طلب الدخول",`<form id="rqf" class="grid" onsubmit="return false"><div class="fld"><label>الاسم</label><input name="name" value="${esc(r.name||"")}"></div><div class="fld"><label>المنصب</label><select name="post" onchange="postFill(this.form)">${postOpts(r.post||"teacher")}</select><span class="note phint">الصلاحيات: ${RLV[(POST[r.post]||POST.teacher).r]}</span></div><div class="fld"><label>القسم</label><select name="usec"><option value="all">القسمان معًا</option><option value="b">قسم البنين فقط</option><option value="g">قسم البنات فقط</option></select></div></form><p class="note">انتبه: منصب «المؤسِّسة» و«المدير العام» يمنح كل الصلاحيات وإدارة المستخدمين.</p>`,`<button class="btn p" onclick="reqDo('${esc(id)}')">قبول وتفعيل الحساب</button><button class="btn o" onclick="closeModal()">إلغاء</button>`);
+}
+async function reqDo(id){
+  const f=readForm("rqf"),role=(POST[f.post]||{}).r;if(!role){toast("اختر المنصب");return}
+  try{const a=accFrom(id);a[ROLEARR[role]].push(id);a.sec[id]=f.usec||"all";a.posts[id]=f.post;a.names[id]=String(f.name||"").trim()||id;
+    await FS.doc("settings/access").set(a);await FS.doc("requests/"+id).delete();closeModal();toast("✓ فُعِّل الحساب");setTimeout(openSettings,300)}catch(e){saveErr(e)}
+}
+async function reqReject(id){const r=REQS.find(x=>x.id===id);if(!r)return;try{const {id:_,...b}=r;await FS.doc("requests/"+id).set({...b,status:"مرفوض"});toast("رُفض الطلب");setTimeout(openSettings,300)}catch(e){saveErr(e)}}
