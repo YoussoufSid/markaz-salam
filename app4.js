@@ -178,3 +178,17 @@ function weeklyHTML(){
   <tr><th>للحفظ</th><th>سورة</th><th>آية</th><th>سورة</th><th>آية</th><th>سورة</th><th>آية</th><th>سورة</th><th>آية</th></tr>${rows||`<tr><td colspan="14" class="c">لا يوجد طلاب في هذه الحلقة</td></tr>`}</table>
   <div class="sign"><span>توقيع الشيخ: ............</span><span>المراقب: ${esc(postName("sup"))}<br>............</span><span>${sigDG()}</span></div></div>`;
 }
+
+/* ---------- ملخص الأسبوع في الرئيسية ---------- */
+function homeWeekly(){
+  if(!D.halaqat.length)return "";
+  const e=new Date(),b=new Date(e.getFullYear(),e.getMonth(),e.getDate()-6),f=d=>d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+  const from=f(b),to=f(e);
+  const rows=D.halaqat.slice().sort((x,y)=>x.name.localeCompare(y.name,"ar")).map(x=>{
+    const dl=D.daily.filter(d=>d.halaqaId===x.id&&d.date>=from&&d.date<=to);
+    let pres=0,tot=0,hifz=0,rev=0;
+    dl.forEach(d=>Object.values(d.rec||{}).forEach(r=>{if(r.att){tot++;if(r.att==="ح"||r.att==="ت")pres++}if(r.hifz||r.hf||r.he)hifz++;if(r.rev||r.rf||r.re)rev++}));
+    const n=D.people.filter(p=>p.cat==="students"&&isAct(p)&&p.halaqa===x.name).length;
+    return `<tr><td>${esc(x.name)}</td><td class="c">${n}</td><td class="c">${dl.length||"—"}</td><td class="c">${tot?Math.round(pres/tot*100)+"%":"—"}</td><td class="c">${hifz||"—"}</td><td class="c">${rev||"—"}</td></tr>`}).join("");
+  return `<div class="panel"><h3>📅 ملخص الأسبوع (آخر 7 أيام)</h3><div class="scroll"><table class="tbl"><tr><th>الحلقة</th><th class="c">الطلاب</th><th class="c">أيام المتابعة</th><th class="c">الحضور</th><th class="c">مرات الحفظ</th><th class="c">مرات المراجعة</th></tr>${rows}</table></div></div>`;
+}
