@@ -294,3 +294,47 @@ async function saveWeekGrid(){
   Object.keys({...old,...view.wedit}).forEach(k=>{const c={};Object.entries({...(old[k]||{}),...(view.wedit[k]||{})}).forEach(([a,b])=>{if(b)c[a]=b});if(Object.keys(c).length)rec[k]=c});
   try{await put("daily",{id,halaqaId:x.id,halaqa:x.name,date:view.date,rec});view.dirty=false;view.wedit=null;toast("✓ حُفظ الأسبوع");render();setTimeout(()=>{try{syncPortal(Object.keys(rec))}catch(e){}},1500)}catch(e){saveErr(e)}
 }
+
+/* ---------- ماسح بطاقات الطلاب (QR) ---------- */
+var SCAN=null;
+function loadJsQR(){return new Promise((ok,no)=>{if(window.jsQR)return ok();const s=document.createElement("script");s.src="jsqr.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+function findByCode(c){c=String(c||"").trim();const parts=c.split("|");const k=parts[0]==="MARKAZ-SALAM"?parts[1]:c;return D.people.find(p=>p.cat==="students"&&(p.regNo===k||p.id===k))||D.people.find(p=>(p.regNo===k||p.id===k))}
+function openScanner(){
+  modal("📷 مسح بطاقة طالب",`<div id="scBox" style="position:relative"><video id="scV" playsinline muted style="width:100%;border-radius:12px;background:#000;max-height:50vh"></video></div><div id="scRes" class="note" style="margin-top:10px">وجّه الكاميرا إلى رمز QR على البطاقة…</div><div class="fld" style="margin-top:10px"><label>أو اكتب رقم التسجيل</label><div style="display:flex;gap:6px"><input id="scM" dir="ltr" placeholder="ST-0001"><button class="btn o" onclick="scanFound($('#scM').value)">بحث</button></div></div>`,`<button class="btn o" onclick="stopScan();closeModal()">إغلاق</button>`);
+  startScan();
+}
+async function startScan(){
+  const res=$("#scRes");
+  try{
+    const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});SCAN={st,on:true,last:""};
+    const v=$("#scV");v.srcObject=st;await v.play();
+    let det=null;if(window.BarcodeDetector){try{det=new BarcodeDetector({formats:["qr_code"]})}catch(e){}}
+    if(!det)await loadJsQR();
+    const cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true});
+    const tick=async()=>{if(!SCAN||!SCAN.on)return;
+      try{if(v.readyState>=2){let code="";
+        if(det){const r=await det.detect(v);if(r.length)code=r[0].rawValue}
+        else{cv.width=v.videoWidth;cv.height=v.videoHeight;cx.drawImage(v,0,0);const im=cx.getImageData(0,0,cv.width,cv.height);const q=jsQR(im.data,im.width,im.height);if(q)code=q.data}
+        if(code&&code!==SCAN.last){SCAN.last=code;scanFound(code);return}}}catch(e){}
+      setTimeout(tick,250)};
+    tick();
+  }catch(e){if(res)res.textContent="تعذّر تشغيل الكاميرا (اسمح بالوصول إلى الكاميرا) — يمكنك كتابة رقم التسجيل أدناه."}
+}
+function stopScan(){if(SCAN){SCAN.on=false;try{SCAN.st.getTracks().forEach(t=>t.stop())}catch(e){}SCAN=null}}
+function scanFound(code){
+  const p=findByCode(code),res=$("#scRes");if(!res)return;
+  if(!p){res.innerHTML=`<span style="color:var(--red)">لم يُعثر على طالب بهذا الرمز.</span>`;if(SCAN){SCAN.last="";setTimeout(()=>SCAN&&SCAN.on&&0,0)}return}
+  if(navigator.vibrate)navigator.vibrate(80);
+  const out=(D.permits||[]).find(x=>x.studentId===p.id&&x.status==="خارج");
+  const h=D.halaqat.find(x=>x.name===p.halaqa);
+  res.innerHTML=`<div class="row"><div class="grow"><div class="nm">${esc(p.name)}</div><div class="mt">${esc(p.regNo||"")} ${p.halaqa?"· "+esc(p.halaqa):""}</div>${out?`<div class="mt" style="color:var(--red)">🚪 خارج المركز حتى ${esc((out.until||"").replace("T"," "))}</div>`:""}</div></div>
+  <div class="tools" style="margin-top:8px">${out?`<button class="btn p" onclick="scanBack('${out.id}')">↩ تسجيل العودة</button>`:""}${h&&can.daily()?`<button class="btn p" onclick="scanPresent('${p.id}','ح')">✓ حاضر</button><button class="btn o" onclick="scanPresent('${p.id}','ت')">متأخر</button>`:""}<button class="btn o" onclick="SCAN&&(SCAN.last='');$('#scRes').textContent='وجّه الكاميرا إلى بطاقة أخرى…';scanResume()">مسح آخر</button></div>`;
+}
+function scanResume(){if(SCAN){SCAN.on=false;const st=SCAN.st;stopScan();openScanner()}}
+async function scanBack(id){try{await permitBack(id);scanFound(SCAN&&SCAN.last||$("#scM").value)}catch(e){}}
+async function scanPresent(sid,v){
+  const p=byId("people",sid),h=D.halaqat.find(x=>x.name===p.halaqa);if(!h)return;
+  const id=h.id+"_"+today(),old=(D.daily.find(d=>d.id===id)||{}).rec||{};
+  const rec={...old,[sid]:{...(old[sid]||{}),att:v}};
+  try{await put("daily",{id,halaqaId:h.id,halaqa:h.name,date:today(),rec});toast("✓ "+p.name+" — "+(v==="ح"?"حاضر":"متأخر"));$("#scRes").innerHTML=`✓ سُجّل: <b>${esc(p.name)}</b>`}catch(e){saveErr(e)}
+}

@@ -1,5 +1,5 @@
-const C="salam-v58";
-const F=["./","./index.html","./i18n.js","./qr.js","./app2.js","./app3.js","./app4.js","./manifest.json","./firebase-config.js","./icon-192.png","./icon-512.png","./building.jpg","./gate.jpg","./xlsx.mini.min.js"];
+const C="salam-v59";
+const F=["./","./index.html","./i18n.js","./qr.js","./jsqr.js","./app2.js","./app3.js","./app4.js","./manifest.json","./firebase-config.js","./icon-192.png","./icon-512.png","./building.jpg","./gate.jpg","./xlsx.mini.min.js"];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>Promise.all(F.map(u=>fetch(u,{cache:"no-store"}).then(r=>r.ok&&c.put(u,r)).catch(()=>{})))))});
 self.addEventListener("message",e=>{if(e.data==="skip")self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});

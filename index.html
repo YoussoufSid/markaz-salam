@@ -777,7 +777,7 @@ function vHome(){
    <div class="hv">﴿${vv[0]}﴾</div><div class="hr">${vv[1]}</div>
    <div class="hd">${ico("calendar",15)} ${dayName(t)}، ${arDate(t)} · ${hijri()}</div>
    <div class="hw">مرحبًا بك${un?" — "+esc(un):""}${center.year?" · السنة الدراسية "+esc(center.year):""}</div>
-   <div class="ha${can.data()?" hide":""}">${can.daily()?`<button class="y" onclick="go('daily',{date:today()})">${ico("check",18)} متابعة اليوم</button>`:""}${can.write()?`<button onclick="go('list',{cat:'students'});setTimeout(()=>openForm('students'),50)">${ico("plus",18)} تسجيل طالب</button>`:""}${can.finW()?`<button onclick="go('finance',{tab:'fees'})">${ico("wallet",18)} دفع جديد</button>`:""}${can.data()?`<button onclick="go('reports')">${ico("printer",18)} التقارير</button>`:""}${ROLE==="guard"?`<button class="y" onclick="go('board',{btab:'permits'})">${ico("bed",18)} أذونات الخروج</button>`:""}</div></div><div class="hp"></div></div>`;
+   <div class="ha${can.data()?" hide":""}">${can.daily()?`<button class="y" onclick="go('daily',{date:today()})">${ico("check",18)} متابعة اليوم</button>`:""}${can.write()?`<button onclick="go('list',{cat:'students'});setTimeout(()=>openForm('students'),50)">${ico("plus",18)} تسجيل طالب</button>`:""}${can.finW()?`<button onclick="go('finance',{tab:'fees'})">${ico("wallet",18)} دفع جديد</button>`:""}${can.data()?`<button onclick="go('reports')">${ico("printer",18)} التقارير</button>`:""}${(ROLE==="guard"||can.daily())?`<button class="y" onclick="openScanner()">📷 مسح بطاقة</button>`:""}${ROLE==="guard"?`<button class="y" onclick="go('board',{btab:'permits'})">${ico("bed",18)} أذونات الخروج</button>`:""}</div></div><div class="hp"></div></div>`;
   if(!can.data())return h+homeLite();
   h+=quickActions()+`
   <div class="stats">
@@ -851,7 +851,7 @@ function modal(title,body,foot,wide){
   o.innerHTML=`<div class="md" style="${wide?"max-width:900px":""}"><div class="mh"><h3>${title}</h3><button class="x" onclick="closeModal()">×</button></div><div class="mb">${body}</div>${foot?`<div class="mf">${foot}</div>`:""}</div>`;
   o.addEventListener("click",e=>{if(e.target===o)closeModal()});document.body.appendChild(ownEl(o));
 }
-function closeModal(){const o=$("#ov");if(o)o.remove()}
+function closeModal(){try{if(typeof stopScan==="function")stopScan()}catch(e){}const o=$("#ov");if(o)o.remove()}
 function inputFor(f,v){
   const val=esc(v??"");
   if(f.type==="select")return `<select name="${f.k}"><option value=""></option>${f.opts.map(o=>`<option ${v===o?"selected":""}>${o}</option>`).join("")}</select>`;
@@ -1652,7 +1652,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=58;
+const BUILD=59;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
