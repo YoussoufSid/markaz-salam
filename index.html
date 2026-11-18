@@ -534,12 +534,12 @@ function age(b){if(!b)return"";const d=new Date(b);if(isNaN(d))return"";const n=
 
 /* ================= configuration ================= */
 const CATS={
-  students:{t:"الطلاب والطالبات",s:"طالب/طالبة",p:"ط",ic:"🎓"},
-  admins:{t:"الإداريون",s:"إداري/إدارية",p:"إد",ic:"🗂️"},
-  teachers:{t:"المدرسون والمدرسات",s:"مدرس/مدرسة",p:"م",ic:"📖"},
-  supervisors:{t:"المراقبون والمراقبات",s:"مراقب/مراقبة",p:"مر",ic:"👁️"},
-  guards:{t:"الحراس",s:"حارس",p:"ح",ic:"🛡️"},
-  workers:{t:"العمال والعاملات",s:"عامل/عاملة",p:"ع",ic:"🧹"}
+  students:{t:"الطلاب والطالبات",s:"طالب/طالبة",p:"ST",ic:"🎓"},
+  admins:{t:"الإداريون",s:"إداري/إدارية",p:"AD",ic:"🗂️"},
+  teachers:{t:"المدرسون والمدرسات",s:"مدرس/مدرسة",p:"TC",ic:"📖"},
+  supervisors:{t:"المراقبون والمراقبات",s:"مراقب/مراقبة",p:"SV",ic:"👁️"},
+  guards:{t:"الحراس",s:"حارس",p:"GD",ic:"🛡️"},
+  workers:{t:"العمال والعاملات",s:"عامل/عاملة",p:"WK",ic:"🧹"}
 };
 const ORDER=["students","admins","teachers","supervisors","guards","workers"];
 const LEVELS=["التمهيدي (التلقين)","المستوى الأول","المستوى الثاني","المستوى الثالث","المستوى الرابع","المستوى الخامس","المستوى السادس","مرحلة المراجعة","خاتم"];
@@ -554,7 +554,8 @@ const normCls=v=>{const i=OLDCLS.indexOf(v);return i>=0?CLASSES[i]:v};
 const stageOf=c=>{const i=CLASSES.indexOf(c);return i<0?"":i<6?"المرحلة الابتدائية":"المرحلة الإعدادية"};
 const shortCls=c=>{const i=CLASSES.indexOf(c);return i<0?(c||""):i<6?(i+1)+" ابتدائي":(i-5)+" إعدادي"};
 const CLASSES_FR=["1re année","2e année","3e année","4e année","5e année","6e année","7e année","8e année","9e année"];
-function migrateCls(list){let ch=[];list.forEach(x=>{let m=false;["arClass","frClass","cls"].forEach(k=>{if(x[k]&&OLDCLS.includes(x[k])){x[k]=normCls(x[k]);m=true}});if(m)ch.push(x)});return ch}
+const REGMAP={"ط":"ST","إد":"AD","م":"TC","مر":"SV","ح":"GD","ع":"WK"};
+function migrateCls(list){let ch=[];list.forEach(x=>{let m=false;const rm=typeof x.regNo==="string"&&x.regNo.match(/^(إد|مر|ط|م|ح|ع)-(\d)-(\d{4})-(\d+)$/);if(rm){x.regNo=REGMAP[rm[1]]+"-"+rm[2]+"-"+rm[3]+"-"+rm[4];m=true}["arClass","frClass","cls"].forEach(k=>{if(x[k]&&OLDCLS.includes(x[k])){x[k]=normCls(x[k]);m=true}});if(m)ch.push(x)});return ch}
 const qLevels=()=>{const l=String(center.quranLevels||"").split(/[،,\n]/).map(x=>x.trim()).filter(Boolean);return l.length?l:LEVELS};
 const STUDENT=[{g:"النظام والأقسام الدراسية"},{k:"regime",l:"النظام",type:"select",opts:REGIMES},{k:"room",l:"الغرفة (للنظام الداخلي)",type:"room"},{k:"level",l:"مستوى القرآن الكريم (الحفظ والمراجعة)",type:"qlevel"},{k:"dailyAmt",l:"مقدار الحفظ اليومي"},{k:"hifzPos",l:"موضع الحفظ الحالي (سورة وآية)"},{k:"revPos",l:"موضع المراجعة الحالي"},{k:"arClass",l:"الصف — قسم اللغة العربية والتربية الإسلامية",type:"select",opts:CLASSES},{k:"frClass",l:"الصف — قسم اللغة الفرنسية والمواد العصرية",type:"select",opts:CLASSES},{g:"بيانات ولي الأمر"},{k:"guardian",l:"اسم ولي الأمر"},{k:"guardianRel",l:"صلة القرابة",type:"select",opts:["الأب","الأم","الأخ","العم","الخال","آخر"]},{k:"guardianPhone",l:"هاتف ولي الأمر (واتساب)",type:"tel"},{k:"guardianJob",l:"مهنة ولي الأمر"},
  {g:"البيانات الدراسية"},{k:"regNo",l:"رقم التسجيل",ro:1},{k:"year",l:"السنة الدراسية",list:"years"},{k:"start",l:"تاريخ الالتحاق",type:"date"},{k:"halaqa",l:"الحلقة",type:"halaqa"},{k:"memorized",l:"عدد الأجزاء المحفوظة",type:"number",min:0,max:30},{k:"timing",l:"الفترة",type:"select",opts:["صباحية","مسائية","كامل اليوم","عطلة نهاية الأسبوع"]},{k:"health",l:"ملاحظات صحية"},
