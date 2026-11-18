@@ -255,3 +255,42 @@ async function sendReset(em){try{await firebase.auth().sendPasswordResetEmail(em
 async function recreateAcc(em){const f=readForm("rpf");if(String(f.pass||"").length<8){toast("كلمة المرور 8 أحرف على الأقل");return}
   try{const sec=firebase.apps.find(a=>a.name==="sec")||firebase.initializeApp(FIREBASE_CONFIG,"sec");await sec.auth().createUserWithEmailAndPassword(em,f.pass);await sec.auth().signOut();closeModal();toast("✓ أُنشئ الحساب بكلمة المرور الجديدة")}
   catch(e){toast(e.code==="auth/email-already-in-use"?"الحساب القديم ما زال موجودًا — احذفه من Firebase أولًا":"تعذّر: "+(e.code||""))}}
+
+/* ---------- شبكة المتابعة الأسبوعية (على شكل الاستمارة الورقية) ---------- */
+function weekGridBody(){
+  const x=byId("halaqat",view.hid);
+  if(!x)return `<div class="empty">${D.halaqat.length?"اختر حلقة":"أنشئ الحلقات أولًا من تبويب «الحلقات»"}</div>`;
+  const ss=studentsOf(x).slice().sort(byName);if(!ss.length)return `<div class="empty">لا يوجد طلاب في هذه الحلقة</div>`;
+  const from=weekStart(view.date),to=addDays(from,6),id=x.id+"_"+view.date,doc=D.daily.find(d=>d.id===id),ro=!can.daily();
+  if(!view.wedit)view.wedit=JSON.parse(JSON.stringify((doc&&doc.rec)||{}));
+  const dl=`<datalist id="surDL">${SURAH.map(q=>`<option value="${q.n}">`).join("")}${Array.from({length:30},(_,i)=>`<option value="الجزء ${i+1}">`).join("")}</datalist><datalist id="grDL">${GRADES.map(g=>`<option value="${g}">`).join("")}</datalist>`;
+  const dis=ro?"disabled":"";
+  const sIn=(sid,k,r)=>`<input list="surDL" class="wsr" ${dis} value="${esc(r[k]||"")}" onchange="wSet('${sid}','${k}',this.value)">`;
+  const nIn=(sid,k,r)=>`<input type="number" min="1" class="wnm" ${dis} value="${esc(r[k]||"")}" onchange="wSet('${sid}','${k}',this.value)">`;
+  const gIn=(sid,k,r)=>`<input list="grDL" class="wgr" ${dis} value="${esc(r[k]||"")}" onchange="wSet('${sid}','${k}',this.value)">`;
+  const rows=ss.map((p,i)=>{const r=view.wedit[p.id]||{};
+    return `<tr><td class="c">${i+1}</td><td class="wnm0">${pn(p)}</td><td class="c">${esc(p.dailyAmt||"")}</td>
+      <td>${sIn(p.id,"hs",r)}</td><td>${nIn(p.id,"hf",r)}</td><td>${sIn(p.id,"he",r)}</td><td>${nIn(p.id,"ht",r)}</td><td>${gIn(p.id,"hg",r)}</td>
+      <td>${sIn(p.id,"rs",r)}</td><td>${nIn(p.id,"rf",r)}</td><td>${sIn(p.id,"re",r)}</td><td>${nIn(p.id,"rt",r)}</td><td>${gIn(p.id,"rg",r)}</td>
+      <td><input class="wnt" ${dis} value="${esc(r.note||"")}" onchange="wSet('${p.id}','note',this.value)"></td></tr>`}).join("");
+  return `${dl}<style>.wgrid input{width:100%;min-width:0;padding:5px 6px;font-size:13px}.wgrid .wsr{min-width:92px}.wgrid .wnm{min-width:52px;max-width:64px}.wgrid .wgr{min-width:78px}.wgrid .wnt{min-width:130px}.wgrid td.wnm0{position:sticky;inset-inline-start:0;background:var(--card,#fff);min-width:130px;font-weight:600;z-index:1}.wgrid th{white-space:nowrap}</style>
+  <div class="note" style="margin:6px 0">الأسبوع من <b>${arDate(from)}</b> إلى <b>${arDate(to)}</b> — تُحفظ القيم في سجلّ تاريخ ${arDate(view.date)} (اختر تاريخ نهاية الأسبوع من الأعلى). اكتب اسم السورة أو اخترها من القائمة.</div>
+  <div class="scroll wgrid"><table class="tbl wkt"><tr><th rowspan="2">م</th><th rowspan="2">الاسم</th><th>مقدار اليومي</th><th colspan="2">بداية الحفظ</th><th colspan="2">نهاية الحفظ</th><th rowspan="2">التقدير</th><th colspan="2">بداية المراجعة</th><th colspan="2">نهاية المراجعة</th><th rowspan="2">التقدير</th><th rowspan="2">ملاحظة</th></tr>
+  <tr><th>للحفظ</th><th>سورة</th><th>آية</th><th>سورة</th><th>آية</th><th>سورة</th><th>آية</th><th>سورة</th><th>آية</th></tr>${rows}</table></div>
+  ${ro?"":`<div class="savebar">${view.dirty?`<span class="msg">● تعديلات غير محفوظة</span>`:`<span class="note">${doc?"محفوظ":"لم تُسجَّل بعد"}</span>`}<button class="btn p" onclick="saveWeekGrid()">💾 حفظ الأسبوع</button><button class="btn o" onclick="go('reports',{rep:'weekly',hid:view.hid,wk:'${from}'})">🖨️ الاستمارة</button></div>`}`;
+}
+function wSet(sid,k,v){
+  const r=view.wedit[sid]=view.wedit[sid]||{};v=String(v||"").trim();
+  if(["hs","he","rs","re"].includes(k)&&v&&!surahBy(v)&&!/^الجزء \d+$/.test(v)){toast("اسم سورة غير معروف — اخترها من القائمة");render();return}
+  if(["hf","ht","rf","rt"].includes(k)&&v){const sn=r[k[0]+(k[1]==="f"?"s":"e")]||r[k[0]+"s"],sur=surahBy(sn);v=String(Math.max(1,Math.min(sur?sur.a:999,Number(v)||1)))}
+  r[k]=v;
+  if(["hs","rs"].includes(k)&&v&&!r[k[0]+"e"])r[k[0]+"e"]=v;
+  ["h","r"].forEach(q=>{r[q==="h"?"hifz":"rev"]=qText(r[q+"s"]||"",r[q+"f"]||"",r[q+"t"]||"",r[q+"e"]||"")});
+  view.dirty=true;const y=scrollY;render();scrollTo(0,y);
+}
+async function saveWeekGrid(){
+  const x=byId("halaqat",view.hid);if(!x)return;
+  const id=x.id+"_"+view.date,old=(D.daily.find(d=>d.id===id)||{}).rec||{},rec={};
+  Object.keys({...old,...view.wedit}).forEach(k=>{const c={};Object.entries({...(old[k]||{}),...(view.wedit[k]||{})}).forEach(([a,b])=>{if(b)c[a]=b});if(Object.keys(c).length)rec[k]=c});
+  try{await put("daily",{id,halaqaId:x.id,halaqa:x.name,date:view.date,rec});view.dirty=false;view.wedit=null;toast("✓ حُفظ الأسبوع");render();setTimeout(()=>{try{syncPortal(Object.keys(rec))}catch(e){}},1500)}catch(e){saveErr(e)}
+}

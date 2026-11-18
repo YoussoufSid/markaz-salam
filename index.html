@@ -961,15 +961,17 @@ function delHalaqa(id){modal("حذف الحلقة","<p>هل تريد حذف هذ
 function vDaily(){
   view.date=view.date||today();view.tab=view.tab||"st";
   const hs=myHalaqat().slice().sort(byName);
-  if(view.tab==="st"&&!view.hid&&hs.length)view.hid=hs[0].id;
+  if((view.tab==="st"||view.tab==="wk")&&!view.hid&&hs.length)view.hid=hs[0].id;
   let h=`<div class="sec-title"><h2>✅ المتابعة اليومية</h2></div>`;
-  if(can.write())h+=`<div class="subtabs"><button class="${view.tab==="st"?"on":""}" onclick="dSet('tab','st')">الطلاب</button><button class="${view.tab==="sf"?"on":""}" onclick="dSet('tab','sf')">حضور العاملين</button></div>`;
+  const wkTab=`<button class="${view.tab==="wk"?"on":""}" onclick="dSet('tab','wk')">📅 الأسبوع</button>`;
+  if(can.write())h+=`<div class="subtabs"><button class="${view.tab==="st"?"on":""}" onclick="dSet('tab','st')">الطلاب</button><button class="${view.tab==="sf"?"on":""}" onclick="dSet('tab','sf')">حضور العاملين</button>${wkTab}</div>`;
+  else if(can.daily())h+=`<div class="subtabs"><button class="${view.tab==="st"?"on":""}" onclick="dSet('tab','st')">الطلاب</button>${wkTab}</div>`;
   h+=`<div class="tools"><input type="date" value="${view.date}" onchange="dSet('date',this.value)"><span class="note">${dayName(view.date)} — ${hijri(view.date)}</span>`;
-  if(view.tab==="st")h+=hs.length?`<select class="grow" onchange="dSet('hid',this.value)">${hs.map(x=>`<option value="${x.id}" ${view.hid===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select>`:"";
+  if(view.tab==="st"||view.tab==="wk")h+=hs.length?`<select class="grow" onchange="dSet('hid',this.value)">${hs.map(x=>`<option value="${x.id}" ${view.hid===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select>`:"";
   h+=`</div>`;
-  return h+(view.tab==="sf"?staffAttBody():dailyBody());
+  return h+(view.tab==="sf"?staffAttBody():view.tab==="wk"?weekGridBody():dailyBody());
 }
-function dSet(k,v){const f=()=>{view[k]=v;view.edit=null;view.dirty=false;render()};if(view.dirty)confirmDiscard(f);else f()}
+function dSet(k,v){const f=()=>{view[k]=v;view.edit=null;view.wedit=null;view.dirty=false;render()};if(view.dirty)confirmDiscard(f);else f()}
 function dailyBody(){
   const x=byId("halaqat",view.hid);
   if(!x)return `<div class="empty">${D.halaqat.length?"اختر حلقة":"أنشئ الحلقات أولًا من تبويب «الحلقات»"}</div>`;
@@ -1650,7 +1652,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=57;
+const BUILD=58;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
