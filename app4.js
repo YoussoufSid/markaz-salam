@@ -338,3 +338,28 @@ async function scanPresent(sid,v){
   const rec={...old,[sid]:{...(old[sid]||{}),att:v}};
   try{await put("daily",{id,halaqaId:h.id,halaqa:h.name,date:today(),rec});toast("✓ "+p.name+" — "+(v==="ح"?"حاضر":"متأخر"));$("#scRes").innerHTML=`✓ سُجّل: <b>${esc(p.name)}</b>`}catch(e){saveErr(e)}
 }
+
+/* ---------- تقدم الحفظ المسجَّل (من المتابعة اليومية) ---------- */
+function hifzCount(sid){
+  const off=[];let t=0;SURAH.forEach(q=>{off.push(t);t+=q.a});
+  const pos=(n,a)=>{const i=SURAH.findIndex(q=>q.n===n);return i<0?-1:off[i]+Math.max(1,Math.min(SURAH[i].a,Number(a)||1))-1};
+  const bm=new Uint8Array(t);
+  D.daily.forEach(d=>{const r=d.rec&&d.rec[sid];if(!r||!r.hs||r.hs.startsWith("الجزء"))return;
+    let a=pos(r.hs,r.hf),b=pos(r.he||r.hs,r.ht||r.hf);if(a<0||b<0)return;if(b<a){const x=a;a=b;b=x}
+    for(let i=a;i<=b;i++)bm[i]=1});
+  let n=0;for(let i=0;i<t;i++)n+=bm[i];return {n,pct:Math.round(n/t*1000)/10,total:t};
+}
+function absWA(sid){const s=byId("people",sid);if(!s||!s.guardianPhone){toast("لا يوجد هاتف لولي الأمر");return}
+  const g=s.gender==="أنثى";openLink("https://wa.me/"+phoneIntl(s.guardianPhone)+"?text="+encodeURIComponent(`السلام عليكم ورحمة الله وبركاته\nنُعلمكم بأن ${g?"الطالبة":"الطالب"} ${s.name} تغيّب${g?"ت":""} عن ثلاث حصص متتالية في ${center.name}. نرجو إفادتنا بالسبب. جزاكم الله خيرًا.`))}
+function weekMsg(s){
+  const from=weekStart(today()),to=addDays(from,6),docs=D.daily.filter(d=>d.date>=from&&d.date<=to&&d.rec&&d.rec[s.id]).sort((a,b)=>a.date.localeCompare(b.date));
+  const c={};ATT.forEach(a=>c[a[0]]=0);docs.forEach(d=>{const a=d.rec[s.id].att;if(a)c[a]++});
+  const hz=docs.filter(d=>d.rec[s.id].hifz).map(d=>"• "+arDate(d.date)+": "+d.rec[s.id].hifz+(d.rec[s.id].hg?" ("+d.rec[s.id].hg+")":"")),rv=docs.filter(d=>d.rec[s.id].rev).slice(-2).map(d=>"• "+d.rec[s.id].rev);
+  const g=s.gender==="أنثى",hc=hifzCount(s.id);
+  let t=`السلام عليكم ورحمة الله وبركاته\nتقرير ${g?"الطالبة":"الطالب"} الأسبوعي: ${s.name}\n${center.name} — ${arDate(from)} إلى ${arDate(to)}\n\nالحضور: ${c["ح"]+c["ت"]} حصة${c["ت"]?" (منها "+c["ت"]+" تأخر)":""} — الغياب: ${c["غ"]}${c["س"]?" — بإذن: "+c["س"]:""}\n`;
+  if(hz.length)t+=`\nالحفظ:\n${hz.join("\n")}\n`;if(rv.length)t+=`\nالمراجعة:\n${rv.join("\n")}\n`;
+  if(hc.n)t+=`\nإجمالي المسجَّل: ${hc.n} آية (${hc.pct}% من القرآن)\n`;
+  return t+`\nنسأل الله أن ${g?"يجعلها":"يجعله"} من أهل القرآن. جزاكم الله خيرًا على متابعتكم.`;
+}
+function parentWAweek(sid){const s=byId("people",sid);if(!s.guardianPhone){toast("لا يوجد هاتف لولي الأمر");return}openLink("https://wa.me/"+phoneIntl(s.guardianPhone)+"?text="+encodeURIComponent(weekMsg(s)))}
+parentList=function(hid){const x=byId("halaqat",hid),ss=studentsOf(x);modal("تقارير أولياء الأمور — "+esc(x.name),`<p class="note">اضغط على كل طالب لإرسال تقريره عبر واتساب: أسبوعي أو شهري.</p><div class="list">${ss.map(s=>`<div class="row"><div class="grow nm">${esc(s.name)}</div>${s.guardianPhone?`<button class="btn wa s" onclick="parentWAweek('${s.id}');this.textContent='✓'">أسبوعي</button><button class="btn wa s" onclick="parentWA('${s.id}');this.textContent='✓'">شهري</button>`:`<span class="tag n">لا هاتف</span>`}</div>`).join("")}</div>`)};

@@ -797,7 +797,7 @@ function vHome(){
    <div class="note" style="margin-top:6px">📖 مستويات القرآن الكريم (الحفظ والمراجعة): ${qLevels().map(l=>`${esc(l)} (${st.filter(s=>s.level===l).length})`).join(" · ")}</div></div></details><div class="panel alerts"><h3>${ico("bell",18)} تنبيهات <span class="cnt">%%N%%</span></h3>`;
   const wd=new Date().getDay();let n=0;
   if(wd!==5&&D.halaqat.length){const miss=D.halaqat.filter(x=>!todays.some(d=>d.halaqaId===x.id));if(miss.length){n++;h+=`<div class="alert w">لم تُسجَّل متابعة اليوم في: ${miss.map(x=>esc(x.name)).join("، ")}</div>`}}
-  const ab=absentStreaks();if(ab.length){n++;h+=`<div class="alert r">غياب 3 حصص متتالية: ${ab.map(a=>`<a href="#" onclick="openDetail('${a.s.id}');return false">${esc(a.s.name)}</a> (${esc(a.h.name)})`).join("، ")} — يُستحسن التواصل مع أولياء أمورهم.</div>`}
+  const ab=absentStreaks();if(ab.length){n++;h+=`<div class="alert r">غياب 3 حصص متتالية: ${ab.map(a=>`<a href="#" onclick="openDetail('${a.s.id}');return false">${esc(a.s.name)}</a> (${esc(a.h.name)})${a.s.guardianPhone?` <a class="btn wa s" href="#" onclick="absWA('${a.s.id}');return false">واتساب</a>`:""}`).join("، ")} — يُستحسن التواصل مع أولياء أمورهم.</div>`}
   if(can.fin()&&(num(fee("monthlyFee"))||D.people.some(p=>num(p.monthlyFee)))){{const un=st.filter(s=>feeOf(s)>paidFor(s.id,m));if(un.length){n++;h+=`<div class="alert w">${un.length} طالبًا لم يُكملوا رسوم ${monthName(m)} — <a href="#" onclick="go('finance',{tab:'fees',month:'${m}',only:1});return false">عرض القائمة</a></div>`}}}
   if((!FS||ROLE==="owner")&&D.people.length){const lb=lsGet("salam_lastbackup",null);const days=lb?Math.floor((Date.now()-new Date(lb))/864e5):999;if(days>=7){n++;h+=`<div class="alert w">💾 ${lb?"آخر نسخة احتياطية منذ "+days+" يومًا":"لم تُحفظ أي نسخة احتياطية بعد"} — البيانات محفوظة في هذا الجهاز فقط. <a href="#" onclick="backupDialog();return false">احفظ نسخة الآن</a></div>`}}
   const lateP=(D.permits||[]).filter(p=>p.status==="خارج"&&p.until&&p.until<nowLocal());if(lateP.length){n++;h+=`<div class="alert r">🚪 تأخر عن العودة إلى القسم الداخلي: ${lateP.map(p=>esc(p.studentName)).join("، ")} — <a href="#" onclick="go('board',{btab:'permits'});return false">عرض</a></div>`}
@@ -1420,6 +1420,7 @@ function parentMsg(s){
   let t=`السلام عليكم ورحمة الله وبركاته\nتقرير ${g?"الطالبة":"الطالب"}: ${s.name}\n${center.name} — ${monthName(m)}\n\n`;
   t+=`الحضور: ${c["ح"]+c["ت"]} حصة${c["ت"]?" (منها "+c["ت"]+" تأخر)":""} — الغياب: ${c["غ"]}${c["س"]?" — بإذن: "+c["س"]:""}\n`;
   t+=`المحفوظ: ${num(s.memorized)} جزءًا من 30${s.level?" — "+s.level:""}\n`;
+  {const hc=hifzCount(s.id);if(hc.n)t+=`المسجَّل في المتابعة: ${hc.n} آية (${hc.pct}% من القرآن)\n`}
   if(hz.length)t+=`\nآخر الحفظ:\n${hz.join("\n")}\n`;
   if(ex)t+=`\nآخر اختبار (${arDate(ex.date)}): ${ex.scope||ex.type} — ${num(ex.total)}/100 (${ex.grade})\n`;
   if(can.fin()){const fee=feeOf(s),pd=paidFor(s.id,m);if(fee&&pd<fee)t+=`\nالمتبقي من رسوم الشهر: ${money(fee-pd)}\n`}
@@ -1652,7 +1653,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=59;
+const BUILD=60;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
