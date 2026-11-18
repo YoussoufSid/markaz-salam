@@ -198,17 +198,18 @@ var REQS=[],REQ_ME=null;
 function signupToggle(on){signupInit();$("#sgf").classList.toggle("hide",!on);const lf=$("#login form");lf.classList.toggle("hide",!!on);$("#sgM").textContent=""}
 async function doSignup(e){
   e.preventDefault();const f=new FormData(e.target),m=$("#sgM");m.textContent="";
-  const name=String(f.get("name")||"").trim(),em=loginId(f.get("email")),pw=String(f.get("pass")||""),post=String(f.get("post")||"teacher");
+  const name=String(f.get("name")||"").trim(),em=loginId(f.get("email")),pw=String(f.get("pass")||""),post=String(f.get("post")||"teacher"),code=String(f.get("code")||"").trim().toUpperCase();
+  if(!code){m.textContent="رمز الدعوة مطلوب";return false}
   if(!name){m.textContent="الاسم مطلوب";return false}
   if(pw.length<8){m.textContent="كلمة المرور 8 أحرف على الأقل";return false}
-  try{sessionStorage.setItem("salam_req",JSON.stringify({name,post}));await firebase.auth().createUserWithEmailAndPassword(em,pw)}
+  try{sessionStorage.setItem("salam_req",JSON.stringify({name,post,code}));await firebase.auth().createUserWithEmailAndPassword(em,pw)}
   catch(err){sessionStorage.removeItem("salam_req");m.textContent=err.code==="auth/email-already-in-use"?"هذا الرقم/البريد مسجَّل من قبل — ارجع وادخل بكلمة مرورك":err.code==="auth/weak-password"?"كلمة المرور ضعيفة":err.code==="auth/invalid-email"?"الرقم أو البريد غير صحيح":/network/.test(err.code||"")?"لا يوجد اتصال بالإنترنت":"تعذّر إرسال الطلب: "+(err.code||"")}
   return false;
 }
 function reqWatch(){
   if(window.__reqW||!FS||!ME)return;window.__reqW=1;
   try{const p=JSON.parse(sessionStorage.getItem("salam_req")||"null");
-    if(p){sessionStorage.removeItem("salam_req");FS.doc("requests/"+ME).set({email:ME,name:p.name,post:p.post,status:"pending",ts:new Date().toISOString()}).catch(()=>{})}}catch(e){}
+    if(p){sessionStorage.removeItem("salam_req");FS.doc("requests/"+ME).set({email:ME,name:p.name,post:p.post,code:p.code||"",status:"pending",ts:new Date().toISOString()}).catch(e=>{window.__reqErr=e.code;render()})}}catch(e){}
   FS.doc("requests/"+ME).onSnapshot(s=>{REQ_ME=s.exists?s.data():null;if(ROLE==="none")render()},()=>{});
 }
 function noneHTML(){
@@ -216,9 +217,9 @@ function noneHTML(){
   const out=`<br><br><button class="btn o" onclick="logout()">تسجيل الخروج</button>`;
   if(st==="pending")return `<div class="empty">⏳ طلب دخولك قيد المراجعة من إدارة المركز.<br>سيُفعَّل حسابك تلقائيًا بعد الموافقة — أبقِ التطبيق مفتوحًا أو ارجع إليه لاحقًا.${out}</div>`;
   if(st==="مرفوض")return `<div class="empty">تعذّر قبول طلبك. تواصل مع إدارة المركز.${out}</div>`;
-  return `<div class="empty"><p>حسابك غير مخوّل بعد. أرسل طلب دخول لتراجعه الإدارة:</p><form id="nqf" class="grid" style="max-width:340px;margin:10px auto" onsubmit="return false"><div class="fld"><label>الاسم الكامل</label><input name="name"></div><div class="fld"><label>المنصب المطلوب</label><select name="post">${POSTS.filter(p=>!["visitor","parent","founder"].includes(p[0])).map(([k,l])=>`<option value="${k}" ${k==="teacher"?"selected":""}>${l}</option>`).join("")}</select></div><button class="btn p" onclick="sendReqForm()">إرسال الطلب</button></form>${out}</div>`;
+  return `<div class="empty"><p>حسابك غير مخوّل بعد. أرسل طلب دخول لتراجعه الإدارة:</p>${window.__reqErr==="permission-denied"?`<p style="color:var(--red)">رمز الدعوة غير صحيح. اطلبه من مسؤول المركز.</p>`:""}<form id="nqf" class="grid" style="max-width:340px;margin:10px auto" onsubmit="return false"><div class="fld"><label>الاسم الكامل</label><input name="name"></div><div class="fld"><label>رمز الدعوة</label><input name="code" dir="ltr" autocomplete="off" style="text-transform:uppercase"></div><div class="fld"><label>المنصب المطلوب</label><select name="post">${POSTS.filter(p=>!["visitor","parent","founder"].includes(p[0])).map(([k,l])=>`<option value="${k}" ${k==="teacher"?"selected":""}>${l}</option>`).join("")}</select></div><button class="btn p" onclick="sendReqForm()">إرسال الطلب</button></form>${out}</div>`;
 }
-async function sendReqForm(){const f=readForm("nqf");if(!String(f.name||"").trim()){toast("اكتب اسمك");return}try{await FS.doc("requests/"+ME).set({email:ME,name:f.name.trim(),post:f.post,status:"pending",ts:new Date().toISOString()});toast("أُرسل الطلب")}catch(e){saveErr(e)}}
+async function sendReqForm(){const f=readForm("nqf");if(!String(f.name||"").trim()){toast("اكتب اسمك");return}if(!String(f.code||"").trim()){toast("اكتب رمز الدعوة");return}try{await FS.doc("requests/"+ME).set({email:ME,name:f.name.trim(),post:f.post,code:String(f.code).trim().toUpperCase(),status:"pending",ts:new Date().toISOString()});window.__reqErr="";toast("أُرسل الطلب")}catch(e){window.__reqErr=e.code;if(e.code==="permission-denied"){render()}else saveErr(e)}}
 function reqHTML(){
   const l=(REQS||[]).filter(r=>(r.status||"pending")==="pending");
   if(!l.length)return "";
@@ -234,3 +235,23 @@ async function reqDo(id){
     await FS.doc("settings/access").set(a);await FS.doc("requests/"+id).delete();closeModal();toast("✓ فُعِّل الحساب");setTimeout(openSettings,300)}catch(e){saveErr(e)}
 }
 async function reqReject(id){const r=REQS.find(x=>x.id===id);if(!r)return;try{const {id:_,...b}=r;await FS.doc("requests/"+id).set({...b,status:"مرفوض"});toast("رُفض الطلب");setTimeout(openSettings,300)}catch(e){saveErr(e)}}
+
+/* ---------- رمز الدعوة وإعادة تعيين كلمة المرور (للمالك) ---------- */
+var INVITE=null;
+const genCode=()=>{const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let r="";const b=crypto.getRandomValues(new Uint8Array(6));b.forEach(x=>r+=c[x%c.length]);return r};
+function inviteHTML(){
+  if(ROLE!=="owner"||!FS)return "";
+  if(INVITE===null)loadInvite();
+  return `<div class="grp" style="margin-top:16px">🎟️ رمز الدعوة</div><div class="row"><div class="grow"><div class="nm" id="invCode" dir="ltr" style="font-family:monospace;font-size:20px;letter-spacing:3px">${esc(INVITE||"…")}</div><div class="mt">يُطلب مع «طلب حساب جديد». أعطِه لمن تريد انضمامه، وجدّده متى شئت.</div></div><button class="btn o s" onclick="newInvite()">تجديد</button></div>`;
+}
+async function loadInvite(){try{INVITE="";const d=await FS.doc("settings/invite").get();if(d.exists&&d.data().code)INVITE=d.data().code;else{INVITE=genCode();await FS.doc("settings/invite").set({code:INVITE})}const el=$("#invCode");if(el)el.textContent=INVITE}catch(e){INVITE=null}}
+async function newInvite(){try{INVITE=genCode();await FS.doc("settings/invite").set({code:INVITE});const el=$("#invCode");if(el)el.textContent=INVITE;toast("✓ رمز جديد (الرمز القديم لم يعد يعمل)")}catch(e){saveErr(e)}}
+function resetUserPass(em){
+  if(!String(em).endsWith("@"+DOM)){
+    modal("إعادة تعيين كلمة المرور",`<p>سيُرسَل رابط تغيير كلمة المرور إلى البريد:</p><p dir="ltr"><b>${esc(em)}</b></p>`,`<button class="btn p" onclick="sendReset('${esc(em)}')">إرسال الرابط</button><button class="btn o" onclick="closeModal()">إلغاء</button>`);return}
+  modal("إعادة تعيين كلمة المرور",`<p>هذا الحساب مسجَّل برقم هاتف (لا بريد فعلي)، فلا يصله رابط. الطريقة:</p><ol style="line-height:1.9;padding-inline-start:20px"><li>افتح Firebase ← <b>Authentication ← Users</b>.</li><li>ابحث عن <b dir="ltr">${esc(em)}</b> ← ⋮ ← <b>Delete account</b>.</li><li>اكتب هنا كلمة المرور الجديدة واضغط الزر؛ تبقى صلاحياته كما هي.</li></ol><form id="rpf" class="grid" onsubmit="return false"><div class="fld"><label>كلمة المرور الجديدة (8 أحرف على الأقل)</label><input name="pass" type="text" dir="ltr" autocomplete="off"></div></form>`,`<button class="btn p" onclick="recreateAcc('${esc(em)}')">إنشاء الحساب بكلمة المرور الجديدة</button><button class="btn o" onclick="closeModal()">إغلاق</button>`);
+}
+async function sendReset(em){try{await firebase.auth().sendPasswordResetEmail(em);closeModal();toast("✓ أُرسل الرابط إلى "+em)}catch(e){toast("تعذّر الإرسال: "+(e.code||""))}}
+async function recreateAcc(em){const f=readForm("rpf");if(String(f.pass||"").length<8){toast("كلمة المرور 8 أحرف على الأقل");return}
+  try{const sec=firebase.apps.find(a=>a.name==="sec")||firebase.initializeApp(FIREBASE_CONFIG,"sec");await sec.auth().createUserWithEmailAndPassword(em,f.pass);await sec.auth().signOut();closeModal();toast("✓ أُنشئ الحساب بكلمة المرور الجديدة")}
+  catch(e){toast(e.code==="auth/email-already-in-use"?"الحساب القديم ما زال موجودًا — احذفه من Firebase أولًا":"تعذّر: "+(e.code||""))}}
