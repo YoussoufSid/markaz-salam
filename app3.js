@@ -21,7 +21,7 @@ function openLog(){
 }
 
 /* ---------------- recycle bin ---------------- */
-async function toTrash(col,obj){if(NOLOG.includes(col)||!obj)return;await put("trash",{id:("t_"+col+"_"+obj.id).slice(0,190),col,data:obj,date:today(),label:String(recLabel(obj)).slice(0,80),by:(CUR&&CUR.name)||ME||""})}
+async function toTrash(col,obj){if(NOLOG.includes(col)||!obj||["finance","staffatt","pfin"].includes(col))return;if(col==="people")obj=stripFin(obj);await put("trash",{id:("t_"+col+"_"+obj.id).slice(0,190),col,data:obj,date:today(),label:String(recLabel(obj)).slice(0,80),by:(CUR&&CUR.name)||ME||""})}
 function openTrash(){
   const ts=[...D.trash].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,80);
   modal("🗑️ سلة المحذوفات",`<p class="note">كل ما يُحذف يبقى هنا 60 يومًا ويمكن استرجاعه.</p>`+(ts.length?`<div class="list">${ts.map(t=>`<div class="row"><div class="grow"><div class="nm">${esc(t.label)}</div><div class="mt">${esc(COLN[t.col]||t.col)} · حُذف ${arDate(t.date)}${t.by?" · بواسطة "+esc(t.by):""}</div></div><button class="btn p s" onclick="restoreTrash('${t.id}')">↩︎ استرجاع</button>${can.owner()?`<button class="btn d s" onclick="purgeTrash('${t.id}')">حذف نهائي</button>`:""}</div>`).join("")}</div>`:`<div class="empty">السلة فارغة</div>`),"",true);

@@ -611,7 +611,7 @@ const INC_SRC=["رسوم تسجيل","تبرع","دعم جهة","زكاة/صدق
 const METHODS=["نقدًا","Orange Money","Moov Money","تحويل بنكي"];
 
 /* ================= state & data ================= */
-const COLS=["people","halaqat","daily","finance","staffatt","exams","grades","rooms","board","permits","logs","trash"];
+const COLS=["people","halaqat","daily","finance","staffatt","pfin","exams","grades","rooms","board","permits","logs","trash"];
 const RAW={};COLS.forEach(c=>RAW[c]=[]);
 let SEC=lsGet("salam_sec","b"), SECLOCK="";
 const SECS={b:"قسم البنين",g:"قسم البنات"};
@@ -638,10 +638,13 @@ const DEFPOST={founder:"السيدة الحاجة كورتم تونكارا",dg:
 const postName=k=>{const v=(center.posts||{})[k];return v!=null&&v!==""?v:(DEFPOST[k]||"")};
 const sigDG=()=>`المدير العام: ${esc(postName("dg"))}<br>${center.stampDir?`<img class="stp" src="${center.stampDir}" alt="">`:"............"}`;
 const postOf=u=>u&&u.post&&POST[u.post]?POST[u.post].l:"";
-const WR={people:"write",halaqat:"write",rooms:"write",trash:"write",finance:"finW",staffatt:"finW",daily:"daily",exams:"daily",grades:"daily",board:"daily",portal:"daily",permits:"permit"};
+const WR={people:"write",halaqat:"write",rooms:"write",trash:"write",finance:"finW",staffatt:"finW",pfin:"finW",daily:"daily",exams:"daily",grades:"daily",board:"daily",portal:"daily",permits:"permit"};
 const canCol=c=>c==="logs"||!WR[c]?can.write()||c==="logs":can[WR[c]]();
 const ALLOWV={guard:["home","board"],worker:["home"],visitor:["home"],accountant:["home","people","list","student","halaqat","halaqa","finance","reports","grades","exams"]};
 const lsKey=c=>"salam_"+c+"_v1";
+const FINF=["salary","monthlyFee"];
+const stripFin=b=>{const o={...b};FINF.forEach(k=>delete o[k]);return o};
+function overlayFin(){if(!FS||!can.fin())return;const m=new Map(RAW.pfin.map(x=>[x.id,x]));RAW.people.forEach(p=>{const f=m.get(p.id);if(f)FINF.forEach(k=>{if(f[k]!==undefined&&f[k]!=="")p[k]=f[k];else if(f[k]==="")delete p[k]})})}
 const people=()=>D.people;
 const byId=(c,id)=>D[c].find(x=>x.id===id);
 const isAct=p=>(p.status||"نشط")==="نشط";
@@ -664,7 +667,9 @@ async function put(col,obj){
   if(!canCol(col)){toast("ليست لديك صلاحية لهذا الإجراء");throw {code:"permission-denied"}}
   obj.updated=new Date().toISOString(); if(ME)obj.by=ME; if(!obj.sec)obj.sec=SEC;
   const existed=RAW[col].some(x=>x.id===obj.id);
-  if(FS){const {id,...b}=obj;await FS.collection(col).doc(id).set(JSON.parse(JSON.stringify(b)));if(typeof logAct==="function")logAct(existed?"تعديل":"إضافة",col,obj);return}
+  if(FS){const {id,...b0}=obj;let b=b0,merge=false;
+    if(col==="people"){b=stripFin(b0);if(can.fin()){const fb={sec:obj.sec,updated:obj.updated};FINF.forEach(k=>{if(b0[k]!==undefined)fb[k]=b0[k]});try{await FS.collection("pfin").doc(id).set(JSON.parse(JSON.stringify(fb)),{merge:true})}catch(e){b=b0}}else merge=true}
+    await FS.collection(col).doc(id).set(JSON.parse(JSON.stringify(b)),merge?{merge:true}:undefined);if(typeof logAct==="function")logAct(existed?"تعديل":"إضافة",col,obj);return}
   const a=RAW[col],i=a.findIndex(x=>x.id===obj.id);if(i>=0)a[i]=obj;else a.push(obj);lsSet(lsKey(col),a);
   if(typeof logAct==="function"&&!window.__bulk)logAct(existed?"تعديل":"إضافة",col,obj);if(!window.__bulk)render();
 }
@@ -733,14 +738,14 @@ function subscribe(){
   const subs=[["people"],["halaqat"],["daily",["date",">=",t0]],["exams",["date",">=",f0]],["grades",["date",">=",f0]],["rooms"],["board",["date",">=",t0]],["permits",["date",">=",f0]]];
   if(ROLE==="guard")subs.splice(0,subs.length,["people"],["permits",["date",">=",f0]]);else if(!can.data())subs.length=0;
   if(can.log())subs.push(["logs",["date",">=",t0]]);if(can.write())subs.push(["trash",["date",">=",addMonths(monthOf(today()),-2)+"-01"]]);
-  if(can.fin())subs.push(["finance",["date",">=",f0]]);if(can.write()||ROLE==="accountant"||ROLE==="inspector")subs.push(["staffatt",["date",">=",t0]]);
+  if(can.fin()){subs.push(["finance",["date",">=",f0]]);subs.push(["pfin"])}if(can.write()||ROLE==="accountant"||ROLE==="inspector")subs.push(["staffatt",["date",">=",t0]]);
   let first=true;const timer=setTimeout(()=>setStatus(navigator.onLine?"تعذّر الوصول إلى قاعدة البيانات — أعد تحميل الصفحة":"لا يوجد اتصال بالإنترنت"),15000);
   subs.forEach(([col,q])=>{
     let ref=FS.collection(col);if(SECLOCK)ref=ref.where("sec","==",SECLOCK);else if(q)ref=ref.where(...q);
     ref.onSnapshot(s=>{
-      RAW[col]=s.docs.map(d=>({id:d.id,...d.data()}));
-      if(ROLE==="owner"&&!s.metadata.fromCache&&(col==="people"||col==="grades")){const ch=migrateCls(RAW[col]);if(ch.length){const b=FS.batch();ch.slice(0,400).forEach(x=>{const {id,...body}=x;b.set(FS.collection(col).doc(id),body)});b.commit().catch(()=>{})}}
-      if(ROLE==="owner"&&!s.metadata.fromCache){const miss=RAW[col].filter(x=>!x.sec);if(miss.length){const b=FS.batch();miss.slice(0,400).forEach(x=>{const {id,...body}=x;b.set(FS.collection(col).doc(id),{...body,sec:secOf(x,col)})});b.commit().catch(()=>{})}}
+      RAW[col]=s.docs.map(d=>({id:d.id,...d.data()}));if(col==="people"||col==="pfin")overlayFin();
+      if(ROLE==="owner"&&!s.metadata.fromCache&&(col==="people"||col==="grades")){const ch=migrateCls(RAW[col]);if(ch.length){const b=FS.batch();ch.slice(0,400).forEach(x=>{const {id,...body0}=x;const body=col==="people"?stripFin(body0):body0;b.set(FS.collection(col).doc(id),body,col==="people"?{merge:true}:undefined)});b.commit().catch(()=>{})}}
+      if(ROLE==="owner"&&!s.metadata.fromCache){const miss=RAW[col].filter(x=>!x.sec);if(miss.length){const b=FS.batch();miss.slice(0,400).forEach(x=>{const {id,...body0}=x;const body=col==="people"?stripFin(body0):body0;b.set(FS.collection(col).doc(id),{...body,sec:secOf(x,col)},col==="people"?{merge:true}:undefined)});b.commit().catch(()=>{})}}
       if(!s.metadata.fromCache&&first){first=false;clearTimeout(timer)}
       setStatus("متصل — "+ME+" · "+({owner:"المالك",editor:"إدخال وتعديل",teacher:"مدرس",viewer:"اطلاع فقط"}[ROLE]||""));
       scheduleRender();
@@ -1280,7 +1285,7 @@ function exportCSV(cat){
 }
 async function backup(pw){
   const data={};
-  if(FS){toast("جارٍ تجهيز النسخة…");for(const c of COLS){if(!can.fin()&&(c==="finance"||c==="staffatt"))continue;const s=SECLOCK?await FS.collection(c).where("sec","==",SECLOCK).get():await FS.collection(c).get();data[c]=s.docs.map(d=>({id:d.id,...d.data()}))}}
+  if(FS){toast("جارٍ تجهيز النسخة…");for(const c of COLS){if(!can.fin()&&(c==="finance"||c==="staffatt"||c==="pfin"))continue;const s=SECLOCK?await FS.collection(c).where("sec","==",SECLOCK).get():await FS.collection(c).get();data[c]=s.docs.map(d=>({id:d.id,...d.data()}))}}
   else COLS.forEach(c=>data[c]=RAW[c]);
   let obj={app:"markaz-salam",v:2,center,data,exported:new Date().toISOString()};
   if(pw){toast("جارٍ التشفير…");obj=await encryptJSON(obj,pw)}
@@ -1302,7 +1307,7 @@ async function restoreObj(o){
    `<button class="btn p" id="rm">دمج</button>${FS?"":`<button class="btn d" id="rr">استبدال</button>`}<button class="btn o" onclick="closeModal()">إلغاء</button>`);
   const apply=async replace=>{
     closeModal();
-    if(FS){toast("جارٍ الرفع…");try{for(const [c,arr] of Object.entries(data)){if(!COLS.includes(c))continue;for(let i=0;i<arr.length;i+=400){const b=FS.batch();arr.slice(i,i+400).forEach(x=>{const {id,...body}=x;if(!body.sec)body.sec=secOf(x,c);b.set(FS.collection(c).doc(id),body)});await b.commit()}}if(o.center)await saveCenter({...center,...o.center});toast("تم الاسترجاع")}catch(e){saveErr(e)}return}
+    if(FS){toast("جارٍ الرفع…");try{for(const [c,arr] of Object.entries(data)){if(!COLS.includes(c))continue;for(let i=0;i<arr.length;i+=200){const b=FS.batch();arr.slice(i,i+200).forEach(x=>{const {id,...body0}=x;let body=body0;if(!body.sec)body.sec=secOf(x,c);if(c==="people"){if(can.fin()&&FINF.some(k=>body0[k]!==undefined&&body0[k]!==""))b.set(FS.collection("pfin").doc(id),{sec:body.sec,salary:body0.salary||"",monthlyFee:body0.monthlyFee||"",updated:new Date().toISOString()});body=stripFin(body)}b.set(FS.collection(c).doc(id),body)});await b.commit()}}if(o.center)await saveCenter({...center,...o.center});toast("تم الاسترجاع")}catch(e){saveErr(e)}return}
     for(const [c,arr] of Object.entries(data)){if(!COLS.includes(c))continue;if(replace)RAW[c]=arr.slice();else{const mp=new Map(RAW[c].map(x=>[x.id,x]));arr.forEach(x=>{const y=mp.get(x.id);if(!y||(x.updated||"")>=(y.updated||""))mp.set(x.id,x)});RAW[c]=[...mp.values()]}RAW[c].forEach(x=>{if(!x.sec)x.sec=secOf(x,c)});lsSet(lsKey(c),RAW[c])}
     if(o.center){center={...center,...o.center};lsSet("salam_center_v1",center);applyCenter()}
     render();toast("تم الاسترجاع");
@@ -1349,7 +1354,7 @@ function postFill(f){const k=f.post.value;if(ONEPOST.includes(k)&&postName(k)&&!
 function usersHTML(){
   const all=Object.values(ROLEARR).flatMap(k=>(ACCESS[k]||[]).map(e=>[e,k])),P=ACCESS.posts||{},N=ACCESS.names||{};
   const ord=e=>{const i=POSTS.findIndex(p=>p[0]===P[e]);return i<0?99:i};all.sort((a,b)=>ord(a[0])-ord(b[0]));
-  return reqHTML()+inviteHTML()+`<div class="grp" style="margin-top:16px">المستخدمون والصلاحيات</div><div class="list" style="margin:8px 0">${all.map(([e,k])=>`<div class="row"><div class="grow"><div class="nm">${esc(N[e]||showId(e))}</div><div class="mt">${esc((POST[P[e]]||{}).l||"")} · <span dir="ltr">${esc(showId(e))}</span> · ${ROLES[k]} · ${({b:"قسم البنين",g:"قسم البنات"})[(ACCESS.sec||{})[e]]||"القسمان"}</div></div><button class="btn o s" title="كلمة المرور" onclick="resetUserPass('${esc(e)}')">🔑</button><button class="btn o s" onclick="removeUser('${esc(e)}')">إزالة</button></div>`).join("")||'<div class="note">لا يوجد مستخدمون غيرك بعد.</div>'}</div>
+  return reqHTML()+inviteHTML()+finMigHTML()+`<div class="grp" style="margin-top:16px">المستخدمون والصلاحيات</div><div class="list" style="margin:8px 0">${all.map(([e,k])=>`<div class="row"><div class="grow"><div class="nm">${esc(N[e]||showId(e))}</div><div class="mt">${esc((POST[P[e]]||{}).l||"")} · <span dir="ltr">${esc(showId(e))}</span> · ${ROLES[k]} · ${({b:"قسم البنين",g:"قسم البنات"})[(ACCESS.sec||{})[e]]||"القسمان"}</div></div><button class="btn o s" title="كلمة المرور" onclick="resetUserPass('${esc(e)}')">🔑</button><button class="btn o s" onclick="removeUser('${esc(e)}')">إزالة</button></div>`).join("")||'<div class="note">لا يوجد مستخدمون غيرك بعد.</div>'}</div>
   <form id="uf" class="grid" onsubmit="return false"><div class="fld"><label>المنصب</label><select name="post" onchange="postFill(this.form)">${postOpts("teacher")}</select><span class="note phint">الصلاحيات: ${RLV.teacher}</span></div><div class="fld"><label>الاسم</label><input name="name"></div><div class="fld"><label>رقم الهاتف أو البريد الإلكتروني</label><input name="email" type="text" dir="ltr" placeholder="70 00 00 00"></div><div class="fld"><label>كلمة المرور (8 أحرف فأكثر)</label><input name="pass" type="text" dir="ltr"></div>
   <div class="fld"><label>القسم</label><select name="usec"><option value="all">القسمان معًا</option><option value="b">قسم البنين فقط</option><option value="g">قسم البنات فقط</option></select></div><div class="fld" style="align-self:end"><button class="btn p" style="width:100%" onclick="addUser()">＋ إضافة مستخدم</button></div></form>
   <p class="note">• يدخل كل مستخدم برقم هاتفه (أو بريده) وكلمة المرور التي تحددها له هنا، ولا يرى إلا ما يسمح به منصبه.<br>• للمدرس: اكتب رقم هاتفه أو بريده في خانة «البريد» في بياناته، فتظهر له حلقاته فقط.<br>• لولي الأمر: أضفه برقم الهاتف المسجَّل في «هاتف ولي الأمر» عند أبنائه، فيرى أبناءه فقط، ثم اضغط «تحديث بوابة أولياء الأمور».</p><button class="btn o" onclick="syncPortal(activeStudents().map(s=>s.id),true)">🔄 تحديث بوابة أولياء الأمور</button>`;
@@ -1696,7 +1701,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=78;
+const BUILD=79;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}

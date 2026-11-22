@@ -448,3 +448,29 @@ function withAdmStamp(html){
     t.content.querySelectorAll(".sign").forEach(s=>{if(s.querySelector(".stpA"))return;const sp=document.createElement("span");sp.className="stpA";sp.innerHTML=`<img class="stp" src="${center.stampAdm}" alt="">`;const k=s.children;if(k.length>=2)s.insertBefore(sp,k[1]);else s.appendChild(sp)});
     return t.innerHTML}catch(e){return html}
 }
+
+/* ===== نقل الراتب والرسوم الشهرية إلى مجموعة pfin المحمية ===== */
+function finMigHTML(){
+  if(ROLE!=="owner"||!FS||!can.fin())return "";
+  return `<div class="grp" style="margin-top:16px">🔒 حماية الرواتب والرسوم</div><div class="row"><div class="grow"><div class="nm">نقل الأرقام المالية إلى مجموعة محمية</div><div class="mt">ينزّل نسخة احتياطية ثم ينقل الراتب والرسوم الشهرية من ملفات الأشخاص إلى مجموعة لا يقرؤها إلا أصحاب الصلاحية المالية. آمن ويمكن إعادته.</div></div><button class="btn o s" id="finMigBtn" onclick="migrateFin()">نقل</button></div>`;
+}
+async function migrateFin(){
+  if(!FS||!can.fin())return;
+  const btn=$("#finMigBtn");if(btn){btn.disabled=true;btn.textContent="…"}
+  try{
+    toast("جارٍ تنزيل نسخة احتياطية…");await backup("");
+    const snap=await FS.collection("people").get();
+    const todo=snap.docs.filter(d=>{const x=d.data();return FINF.some(k=>x[k]!==undefined)});
+    if(!todo.length){toast("✓ لا شيء للنقل — الأرقام محمية بالفعل");if(btn){btn.disabled=false;btn.textContent="نقل"}return}
+    // 1) انسخ إلى pfin أولًا
+    for(let i=0;i<todo.length;i+=400){const b=FS.batch();todo.slice(i,i+400).forEach(d=>{const x=d.data();const o={sec:x.sec||secOf({id:d.id,...x},"people"),updated:new Date().toISOString()};FINF.forEach(k=>{if(x[k]!==undefined)o[k]=x[k]});b.set(FS.collection("pfin").doc(d.id),o,{merge:true})});await b.commit()}
+    // 2) تحقّق من القراءة قبل الحذف
+    const chk=await FS.collection("pfin").get();const have=new Set(chk.docs.map(d=>d.id));
+    const ok=todo.filter(d=>have.has(d.id));
+    if(ok.length!==todo.length){toast("تعذّر التحقق — لم يُحذف شيء");return}
+    // 3) احذف الحقول من people
+    for(let i=0;i<ok.length;i+=400){const b=FS.batch();ok.slice(i,i+400).forEach(d=>{const u={};FINF.forEach(k=>u[k]=firebase.firestore.FieldValue.delete());b.update(FS.collection("people").doc(d.id),u)});await b.commit()}
+    toast("✓ نُقل "+ok.length+" سجلًّا إلى المجموعة المحمية");
+  }catch(e){saveErr(e)}
+  if(btn){btn.disabled=false;btn.textContent="نقل"}
+}
