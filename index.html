@@ -245,7 +245,8 @@ body.nosb.menu #scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0
 body.nosb #burger{display:inline-block}
 #scrim{display:none}
 main{max-width:1150px;margin:0 auto;padding:18px 18px 90px}
-@media(max-width:900px){
+@media(min-width:561px) and (max-width:900px){#shell{grid-template-columns:220px 1fr}#side{width:220px}#side .brand b{font-size:15px}main{padding:14px 12px 90px}}
+@media(max-width:560px){
  #shell{grid-template-columns:1fr}
  #side{position:fixed;inset-block:0;inset-inline-start:0;width:270px;transform:translateX(105%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.2)}
  [dir=ltr] #side{transform:translateX(-105%)}
@@ -764,7 +765,7 @@ function tabs(){
 }
 const TITLES={kids:"أبنائي",grades:"الدرجات والشهادات الفصلية",board:"القسم الداخلي",student:"ملف الطالب",home:"لوحة التحكم",people:"الأشخاص",list:"الأشخاص",halaqat:"الحلقات",halaqa:"الحلقات",daily:"المتابعة اليومية",exams:"الاختبارات والشهادات",finance:"المالية",reports:"التقارير",classes:"توزيع الصفوف"};
 function renderShell(){
-  const cur=TOP[view.name];document.body.classList.toggle("nosb",view.name==="home");if(view.name!=="home")document.body.classList.remove("menu");
+  const cur=TOP[view.name];document.body.classList.remove("nosb");if(view.name!=="home")document.body.classList.remove("menu");
   $("#nav").innerHTML=tabs().map(([g,items])=>`<div class="gh">${g}</div>`+items.map(([k,ic,l])=>`<button class="${cur===k?"on":""}" onclick="document.body.classList.remove('menu');go('${k}')">${ico(ic)}<span>${l}</span></button>`).join("")).join("")+`<div class="gh">الحساب</div>${ROLE==="visitor"?"":`<button onclick="openSettings()">${ico("settings")}<span>الإعدادات</span></button>`}<button onclick="toggleLang()">${ico("globe")}<span>${LANG==="fr"?"العربية":"Français"}</span></button><button onclick="updateApp()">${ico("refresh")}<span>تحديث التطبيق</span></button><button onclick="doExit()">${ico("uswitch")}<span>خروج</span></button>${FS?`<button onclick="logout()">${ico("logout")}<span>تسجيل الخروج</span></button>`:""}`;
   $("#secsw").style.display=ROLE==="parent"?"none":"";
   $("#secsw").innerHTML=["b","g"].map(k=>`<button class="${SEC===k?"on":""}" ${SECLOCK&&SECLOCK!==k?"disabled":""} onclick="setSec('${k}')">${k==="b"?"👦 ":"👧 "}${SECS[k]}</button>`).join("");
@@ -1701,7 +1702,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=79;
+const BUILD=80;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
