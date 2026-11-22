@@ -363,3 +363,50 @@ function weekMsg(s){
 }
 function parentWAweek(sid){const s=byId("people",sid);if(!s.guardianPhone){toast("لا يوجد هاتف لولي الأمر");return}openLink("https://wa.me/"+phoneIntl(s.guardianPhone)+"?text="+encodeURIComponent(weekMsg(s)))}
 parentList=function(hid){const x=byId("halaqat",hid),ss=studentsOf(x);modal("تقارير أولياء الأمور — "+esc(x.name),`<p class="note">اضغط على كل طالب لإرسال تقريره عبر واتساب: أسبوعي أو شهري.</p><div class="list">${ss.map(s=>`<div class="row"><div class="grow nm">${esc(s.name)}</div>${s.guardianPhone?`<button class="btn wa s" onclick="parentWAweek('${s.id}');this.textContent='✓'">أسبوعي</button><button class="btn wa s" onclick="parentWA('${s.id}');this.textContent='✓'">شهري</button>`:`<span class="tag n">لا هاتف</span>`}</div>`).join("")}</div>`)};
+
+/* ---------- تحسينات الاستخدام: طيّ الإعدادات، الكل حاضر، مؤشر الحفظ، البحث، دليل البدء ---------- */
+function foldModal(){
+  const mb=document.querySelector("#ov .mb");if(!mb||mb.dataset.fold)return;mb.dataset.fold="1";
+  mb.querySelectorAll(".grp").forEach(g=>{
+    const box=document.createElement("div");box.className="fbody";box.style.display="contents";
+    let n=g.nextSibling;const items=[];while(n&&!(n.nodeType===1&&n.classList.contains("grp"))){items.push(n);n=n.nextSibling}
+    if(!items.length)return;g.parentNode.insertBefore(box,g.nextSibling);items.forEach(x=>box.appendChild(x));
+    const open=/طلبات الدخول/.test(g.textContent);g.classList.add("fh");
+    const set=o=>{box.style.display=o?"contents":"none";g.classList.toggle("cl",!o)};set(open);
+    g.onclick=()=>set(box.style.display==="none");
+  });
+}
+function allPresent(){const x=byId("halaqat",view.hid);if(!x||!view.edit)return;let n=0;studentsOf(x).forEach(s=>{const r=view.edit[s.id]=view.edit[s.id]||{};if(!r.att){r.att="ح";n++}});view.dirty=true;const y=scrollY;render();scrollTo(0,y);toast(n?"✓ سُجّل "+n+" طالبًا حاضرًا — عدّل الغائبين ثم احفظ":"الكل مسجَّل مسبقًا")}
+addEventListener("load",function(){
+  const _put=window.put;if(typeof _put!=="function"||_put.__w)return;window.put=async function(c,o){try{setStatus("جارٍ الحفظ…")}catch(e){}
+    try{const r=await _put(c,o);try{setStatus(!FS?"محفوظ":navigator.onLine?"✓ حُفظ":"بدون إنترنت — سيُرسَل عند عودة الاتصال");if(FS)setTimeout(()=>{try{setStatus(navigator.onLine?"متصل":"بدون إنترنت")}catch(e){}},2500)}catch(e){}return r}
+    catch(e){try{setStatus("تعذّر الحفظ")}catch(x){}throw e}};window.put.__w=1;
+  addEventListener("offline",()=>{try{if(FS)setStatus("بدون إنترنت — يعمل محليًا")}catch(e){}});
+  addEventListener("online",()=>{try{if(FS)setStatus("متصل")}catch(e){}});
+});
+function openSearch(){
+  modal("🔍 بحث",`<input id="gs" placeholder="اسم طالب أو حلقة أو مستخدم، أو رقم التسجيل…" autocomplete="off" oninput="doSearch(this.value)"><div id="gsr" class="list" style="margin-top:10px"><div class="note">اكتب حرفين على الأقل.</div></div>`,`<button class="btn o" onclick="closeModal()">إغلاق</button>`);
+  setTimeout(()=>{const i=$("#gs");i&&i.focus()},60);
+}
+function doSearch(q){
+  q=String(q||"").trim().toLowerCase();const r=$("#gsr");if(!r)return;if(q.length<2){r.innerHTML='<div class="note">اكتب حرفين على الأقل.</div>';return}
+  const m=s=>[s.name,s.nameFr,s.regNo,s.phone,s.guardianPhone].some(v=>String(v||"").toLowerCase().includes(q));
+  const ppl=D.people.filter(m).slice(0,12),hl=D.halaqat.filter(h=>String(h.name||"").toLowerCase().includes(q)).slice(0,5);
+  let h="";
+  hl.forEach(x=>{h+=`<div class="row" onclick="closeModal();go('daily',{date:today(),hid:'${x.id}'})"><div class="grow nm">📖 حلقة ${esc(x.name)}</div><span class="tag n">المتابعة</span></div>`});
+  ppl.forEach(s=>{const st=s.cat==="students";h+=`<div class="row" onclick="closeModal();${st?`openDetail('${s.id}')`:`go('list',{cat:'${s.cat}'})`}"><div class="grow"><div class="nm">${esc(s.name||s.nameFr||"")}</div><div class="mt">${esc(s.regNo||"")} ${s.halaqa?"· "+esc(s.halaqa):""}</div></div><span class="tag n">${st?"طالب":"عاملون"}</span></div>`});
+  r.innerHTML=h||'<div class="note">لا نتائج.</div>';
+}
+addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"&&typeof ROLE!=="undefined"&&ROLE&&ROLE!=="parent"&&ROLE!=="visitor"){e.preventDefault();openSearch()}});
+const TIPS={
+  teacher:["افتح «المتابعة اليومية» واختر حلقتك.","اضغط «✓ الكل حاضر» ثم عدّل الغائبين، وسجّل الحفظ والمراجعة.","اضغط «حفظ المتابعة» — ويظهر ✓ حُفظ في الأعلى."],
+  guard:["من الرئيسية: «📷 مسح بطاقة» لقراءة رمز QR للطالب.","سجّل خروج الطالب وعودته من «أذونات الخروج».","الطلاب الخارجون الآن يظهرون في الرئيسية."],
+  owner:["من «⚙︎ الإعدادات» أعطِ رمز الدعوة لمن تريد انضمامه، ثم اقبل طلبه.","استورد الطلاب من «📥 استيراد»، وراجع «سجل العمليات» عند الحاجة.","احفظ نسخة احتياطية دورية من الرئيسية."],
+  editor:["سجّل الطلاب من «تسجيل طالب جديد» وأسندهم إلى الحلقات.","استعمل 🔍 البحث للوصول السريع إلى أي طالب.","اطبع البطاقات والتقارير من «التقارير»."],
+  _:["استعمل القائمة الجانبية للتنقل بين الأقسام.","زر 🔍 البحث في الرئيسية (أو Ctrl+K) يوصلك بسرعة.","حالة الاتصال والحفظ تظهر في أعلى الصفحة."]};
+setInterval(()=>{try{
+  if(typeof ROLE==="undefined"||!ROLE||ROLE==="none"||document.querySelector("#ov")||!document.getElementById("splash").classList.contains("hide"))return;
+  const k="salam_tip_"+ROLE;if(localStorage.getItem(k))return;localStorage.setItem(k,"1");
+  const t=TIPS[ROLE]||TIPS[ROLE==="dg"?"owner":""]||TIPS._;
+  modal("👋 مرحبًا بك",`<ol style="line-height:2;padding-inline-start:22px;margin:0">${t.map(x=>`<li>${x}</li>`).join("")}</ol>`,`<button class="btn p" onclick="closeModal()">فهمت، ابدأ</button>`);
+}catch(e){}},2500);
