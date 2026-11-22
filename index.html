@@ -1438,7 +1438,7 @@ function idCard(p){
   const hdr=`<div class="stripe"></div><div class="ch"><img src="icon-192.png" alt=""><div><b>${esc(center.name)}</b><span dir="ltr" style="display:block">${esc(frName())}</span><span>${SECS[SEC]} · ${esc(center.loc)}</span></div></div>`;
   const front=`<div class="idc2" style="--cc:${cc}">${hdr}
     <div class="tt">${cardTitle(p)} · <span style="font-weight:600;font-size:7pt;direction:ltr;unicode-bidi:isolate">${cardTitleFr(p)}</span></div>
-    <div class="cb"><div class="pp">${p.photo?`<img src="${p.photo}" alt="">`:esc((p.name||p.nameFr||"?").trim()[0])}</div>${center.stampDir?`<img class="cstamp" src="${center.stampDir}" alt="">`:""}
+    <div class="cb"><div class="pp">${p.photo?`<img src="${p.photo}" alt="">`:esc((p.name||p.nameFr||"?").trim()[0])}</div>
     <div class="inf"><b class="nA">${esc(p.name||"")}</b>${p.nameFr?`<b class="nF" dir="ltr">${esc(p.nameFr)}</b>`:""}${rw("الرقم","N°",p.regNo,1).replace('class="vl"','class="vl rgv"')}${rows.join("")}</div>
     <div class="qcol2"><div class="qr">${qrSVG("MARKAZ-SALAM|"+(p.regNo||p.id)+"|"+(p.name||p.nameFr))}</div><span dir="ltr" class="qc">${esc(p.regNo||"")}</span></div></div>
     <div class="cf">${yr?"السنة الدراسية / Année scolaire : "+esc(yr):"&nbsp;"}</div></div>`;
@@ -1695,7 +1695,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=75;
+const BUILD=76;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
