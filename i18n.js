@@ -15,7 +15,7 @@ window.FR = {
 "المالك":"Propriétaire","إدخال وتعديل":"Saisie et modification","مدرس":"Enseignant","اطلاع فقط":"Lecture seule",
 "يتوفر تحديث جديد للتطبيق":"Une nouvelle version est disponible","تحديث الآن":"Mettre à jour",
 "بسم الله الرحمن الرحيم":"Au nom d'Allah, le Tout Miséricordieux, le Très Miséricordieux","اللهم صلِّ وسلم على نبينا محمد":"Ô Allah, prie sur notre Prophète Muhammad et salue-le",
-"مركز السلام للدراسات القرآنية":"Markaz Salam pour les études Coraniques","شعار المركز":"Logo du centre",
+"مركز السلام للدراسات القرآنية":"Markaz As-Salam pour les études Coraniques","شعار المركز":"Logo du centre",
 // ===== lock / login =====
 "أدخل الرمز السري":"Saisissez le code secret","اختر رمزًا سريًّا من 6 أرقام":"Choisissez un code secret à 6 chiffres",
 "لحماية بيانات الطلاب والعاملين — احفظه جيدًا":"Pour protéger les données des élèves et du personnel — retenez-le bien",
