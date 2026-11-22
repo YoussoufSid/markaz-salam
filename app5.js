@@ -128,3 +128,23 @@ function acctCard(){
 function centerSummary(){
   return `<div class="note" style="margin-bottom:8px">${esc(center.name)}${center.loc?" — "+esc(center.loc):""}${center.phone?" — <span dir=\"ltr\">"+esc(center.phone)+"</span>":""}${center.year?" — "+esc(center.year):""}<br>إعدادات المركز يعدّلها أصحاب صلاحية التعديل فقط.</div>`;
 }
+
+/* ===== الرئيسية: تحية حسب الوقت + "اليوم في لمحة" ===== */
+function greet(){const h=new Date().getHours();return h<12?"صباح الخير":h<18?"مساء الخير":"مساء النور"}
+function whoName(){
+  if(typeof CUR!=="undefined"&&CUR&&CUR.name)return CUR.name+(postOf(CUR)?" · "+postOf(CUR):"");
+  if(FS){const p=(ACCESS.posts||{})[ME];const pl=POST[p]?POST[p].l:"";if(typeof MAINOWNER!=="undefined"&&MAINOWNER)return "المالك"+(pl?" · "+pl:"");return pl}
+  return ""
+}
+function glanceHTML(){
+  try{
+    const t=today(),wd=new Date().getDay(),todays=D.daily.filter(d=>d.date===t);
+    let pres=0,tot=0;todays.forEach(d=>Object.values(d.rec||{}).forEach(r=>{if(r.att){tot++;if(r.att==="ح"||r.att==="ت")pres++}}));
+    const miss=wd===5?0:D.halaqat.filter(x=>!todays.some(d=>d.halaqaId===x.id)).length;
+    const rk=allRisks().length;const items=[];
+    items.push(`<button onclick="go('daily',{date:today()})" class="${miss?"w":""}"><b>${D.halaqat.length-miss}/${D.halaqat.length}</b><span>حلقات سُجِّلت متابعتها اليوم</span></button>`);
+    items.push(`<button onclick="go('kpi')" class="${rk?"w":""}"><b>${rk}</b><span>طلاب يحتاجون متابعة</span></button>`);
+    if(can.fin()){const cur=monthOf(t);const un=activeStudents().filter(s=>feeOf(s)>paidFor(s.id,cur)).length;items.push(`<button onclick="go('finance',{tab:'fees',month:'${cur}',only:1})" class="${un?"w":""}"><b>${un}</b><span>لم يُكملوا رسوم الشهر</span></button>`)}
+    return `<div class="glance">${items.join("")}</div>`
+  }catch(e){return ""}
+}

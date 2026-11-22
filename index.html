@@ -40,6 +40,10 @@ a{color:var(--g)}
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .full-ov{position:fixed;inset:0;background:linear-gradient(180deg,rgba(6,90,44,.85),rgba(4,50,25,.95)),url(building.jpg) center/cover,#065a2c;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:20px;text-align:center}
 #lock{z-index:40} #login{z-index:39}
+.lgcn{font-family:Amiri,serif;font-weight:700;color:var(--g);font-size:18px;margin-top:10px;line-height:1.3}.lgfr{font-size:12px;color:var(--mut);font-style:italic}
+.pwrap{position:relative}.pwrap input{width:100%;padding-inline-end:44px}.pwrap .eye{position:absolute;inset-inline-end:4px;top:50%;transform:translateY(-50%);background:none;border:0;font-size:18px;cursor:pointer;padding:8px;min-width:40px;min-height:40px}
+.lgsec{display:flex;gap:8px;margin-top:6px}.lgl{flex:1;background:#f3f7f4;border:1px solid var(--ln);color:var(--g);border-radius:12px;padding:11px 6px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13.5px}.lgl:active{transform:scale(.97)}
+.grt{margin:2px 0 8px;font-weight:700}.glance{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.glance button{flex:1;min-width:120px;background:var(--card,#fff);border:1px solid var(--ln);border-radius:14px;padding:10px 12px;text-align:start;cursor:pointer;font-family:inherit;color:var(--tx)}.glance b{display:block;font-size:20px;color:var(--g)}.glance span{font-size:12px;color:var(--mut)}.glance .w b{color:var(--red)}
 #lock img{width:110px;height:110px;border-radius:50%;background:#fff;margin-bottom:14px}
 #lock h2{font-family:Amiri,serif;margin:0 0 6px}
 .dots{display:flex;gap:12px;margin:18px 0}
@@ -484,14 +488,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
 
 <div id="login" class="full-ov hide">
  <form onsubmit="return doLogin(event)" style="background:#fff;color:var(--tx);border-radius:18px;padding:24px;width:100%;max-width:360px">
-  <img src="icon-192.png" alt="" style="width:96px;height:96px;border-radius:50%"><h2 style="font-family:Amiri,serif;color:var(--g);margin:8px 0 16px">تسجيل الدخول</h2>
+  <img src="icon-192.png" alt="" style="width:88px;height:88px;border-radius:50%;box-shadow:0 4px 14px rgba(6,90,44,.25)"><div class="cName lgcn"></div><div class="cNameFr lgfr"></div><h2 style="font-family:Amiri,serif;color:var(--g);margin:10px 0 12px;font-size:24px">تسجيل الدخول</h2>
   <div class="lgroles"><span>👔 الإداريون</span><span>📖 المدرسون</span><span>👪 أولياء الأمور</span></div>
   <div class="fld" style="text-align:start;margin-bottom:10px"><label>رقم الهاتف أو البريد الإلكتروني</label><input id="lgE" name="email" type="text" inputmode="email" dir="ltr" required autocomplete="username" placeholder="70 00 00 00"></div>
-  <div class="fld" style="text-align:start;margin-bottom:14px"><label>كلمة المرور</label><input name="pass" type="password" dir="ltr" required autocomplete="current-password"></div>
-  <button class="btn p" style="width:100%">دخول</button><button type="button" class="btn o" style="width:100%;margin-top:8px" onclick="visitorIn()">👁 دخول الزوار — بدون رقم ولا كلمة مرور</button>
-  <div id="lgM" style="color:var(--red);min-height:20px;margin-top:10px;font-size:14px"></div>
-  <button type="button" class="btn o" style="width:100%;margin-top:8px" onclick="signupToggle(1)">📝 طلب حساب جديد</button>
-  <div class="note">نسيت كلمة المرور؟ تواصل مع إدارة المركز لإعادة تعيينها.</div><a href="#" onclick="resetPass();return false" style="font-size:12px;color:var(--mut)">إرسال رابط إلى البريد (لأصحاب البريد فقط)</a>
+  <div class="fld" style="text-align:start;margin-bottom:14px"><label>كلمة المرور</label><div class="pwrap"><input name="pass" id="lgP" type="password" dir="ltr" required autocomplete="current-password"><button type="button" class="eye" onclick="const i=$('#lgP');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈'" aria-label="إظهار كلمة المرور">👁</button></div></div>
+  <button class="btn p" id="lgB" style="width:100%;min-height:46px;font-size:16px">دخول</button>
+  <div id="lgM" role="alert" style="color:var(--red);min-height:20px;margin-top:10px;font-size:14px"></div>
+  <div class="lgsec"><button type="button" class="lgl" onclick="signupToggle(1)">📝 طلب حساب جديد</button><button type="button" class="lgl" onclick="visitorIn()">👁 دخول كزائر</button></div>
+  <div class="note" style="margin-top:8px">نسيت كلمة المرور؟ تواصل مع إدارة المركز لإعادة تعيينها.</div><a href="#" onclick="resetPass();return false" style="font-size:12px;color:var(--mut)">إرسال رابط إلى البريد (لأصحاب البريد فقط)</a>
  </form>
  <form id="sgf" class="hide" onsubmit="return doSignup(event)" style="background:#fff;color:var(--tx);border-radius:18px;padding:24px;width:100%;max-width:360px">
   <h2 style="font-family:Amiri,serif;color:var(--g);margin:0 0 12px">طلب حساب جديد</h2>
@@ -713,7 +717,7 @@ async function initCloud(){
   try{await fs.enablePersistence({synchronizeTabs:true})}catch(e){}
   setStatus("جارٍ التحقق من الحساب…");
   firebase.auth().onAuthStateChanged(async u=>{
-    if(!u){$("#login").classList.remove("hide");setStatus("سجّل الدخول للمتابعة");return}
+    if(!u){$("#login").classList.remove("hide");try{const v=localStorage.getItem("salam_lgid");if(v&&!$("#lgE").value){$("#lgE").value=v;setTimeout(()=>{const p=$("#lgP");p&&p.focus()},300)}}catch(_){};setStatus("سجّل الدخول للمتابعة");return}
     $("#login").classList.add("hide");
     ME=(u.email||"").toLowerCase();FS=fs;
     const owner=await isOwnerEmail(ME);MAINOWNER=!!owner;
@@ -821,10 +825,10 @@ function vHome(){
    ${postName("founder")||postName("dg")?`<div class="hfd">${postName("founder")?`<span>المؤسِّسة: <b>${esc(postName("founder"))}</b> — حفظها الله وبارك فيها</span>`:""}${postName("dg")?`<span>المدير العام: <b>${esc(postName("dg"))}</b></span>`:""}</div>`:""}
    <div class="hv">﴿${vv[0]}﴾</div><div class="hr">${vv[1]}</div>
    <div class="hd">${ico("calendar",15)} ${dayName(t)}، ${arDate(t)} · ${hijri()}</div>
-   <div class="hw">مرحبًا بك${un?" — "+esc(un):""}${center.year?" · السنة الدراسية "+esc(center.year):""}</div>
+   <div class="hw">${greet()}${(()=>{const n=whoName();return n?" — "+esc(n):""})()}${center.year?" · السنة الدراسية "+esc(center.year):""}</div>
    <div class="ha${can.data()?" hide":""}">${can.daily()?`<button class="y" onclick="go('daily',{date:today()})">${ico("check",18)} متابعة اليوم</button>`:""}${can.write()?`<button onclick="go('list',{cat:'students'});setTimeout(()=>openForm('students'),50)">${ico("plus",18)} تسجيل طالب</button>`:""}${can.finW()?`<button onclick="go('finance',{tab:'fees'})">${ico("wallet",18)} دفع جديد</button>`:""}${can.data()?`<button onclick="go('reports')">${ico("printer",18)} التقارير</button>`:""}<button onclick="openSearch()">🔍 بحث</button>${(ROLE==="guard"||can.daily())?`<button class="y" onclick="openScanner()">📷 مسح بطاقة</button>`:""}${ROLE==="guard"?`<button class="y" onclick="go('board',{btab:'permits'})">${ico("bed",18)} أذونات الخروج</button>`:""}</div></div><div class="hp"></div></div>`;
   if(!can.data())return h+homeLite();
-  h+=quickActions()+`
+  h+=quickActions()+glanceHTML()+`
   <div class="stats">
    <div class="stat"><div class="v">${st.length}</div><div class="k">طالب نشط</div></div>
    <div class="stat"><div class="v">${st.filter(s=>s.regime==="نظام داخلي").length} / ${st.filter(s=>s.regime!=="نظام داخلي").length}</div><div class="k">داخلي / ذهاب وإياب</div></div>
@@ -1380,9 +1384,9 @@ const DOM="markaz-salam.app";
 function loginId(x){x=String(x||"").trim().toLowerCase();if(x.includes("@"))return x;const d=x.replace(/\D/g,"");return d.slice(-8)+"@"+DOM}
 const showId=e=>String(e||"").endsWith("@"+DOM)?e.split("@")[0].replace(/(\d\d)(?=\d)/g,"$1 "):e;
 async function doLogin(e){
-  e.preventDefault();const f=new FormData(e.target);$("#lgM").textContent="";
-  try{await firebase.auth().signInWithEmailAndPassword(loginId(f.get("email")),String(f.get("pass")))}
-  catch(err){$("#lgM").textContent=/user-not-found|wrong-password|invalid-credential|invalid-login/.test(err.code)?"رقم الهاتف/البريد أو كلمة المرور غير صحيحة":/too-many/.test(err.code)?"محاولات كثيرة — انتظر قليلًا":/network/.test(err.code)?"لا يوجد اتصال بالإنترنت":"تعذّر الدخول: "+err.code}
+  e.preventDefault();const f=new FormData(e.target);$("#lgM").textContent="";const bt=$("#lgB");if(bt){bt.disabled=true;bt.textContent="جارٍ الدخول…"}
+  try{try{localStorage.setItem("salam_lgid",String(f.get("email")).trim())}catch(_){}await firebase.auth().signInWithEmailAndPassword(loginId(f.get("email")),String(f.get("pass")))}
+  catch(err){$("#lgM").textContent=/user-not-found|wrong-password|invalid-credential|invalid-login/.test(err.code)?"رقم الهاتف/البريد أو كلمة المرور غير صحيحة":/too-many/.test(err.code)?"محاولات كثيرة — انتظر قليلًا":/network/.test(err.code)?"لا يوجد اتصال بالإنترنت":"تعذّر الدخول: "+err.code;const b2=$("#lgB");if(b2){b2.disabled=false;b2.textContent="دخول"}}
   return false;
 }
 async function resetPass(){const em=$("#lgE").value.trim();if(!em){$("#lgM").textContent="اكتب بريدك أولًا";return}try{await firebase.auth().sendPasswordResetEmail(em);$("#lgM").textContent="أُرسل رابط تغيير كلمة المرور إلى بريدك"}catch(e){$("#lgM").textContent="تعذّر الإرسال"}}
@@ -1705,7 +1709,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=84;
+const BUILD=86;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
