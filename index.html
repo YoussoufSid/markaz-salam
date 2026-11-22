@@ -320,7 +320,7 @@ body[data-sec=g] .hero2 .hc{background:linear-gradient(135deg,#a0336b,#5c1b3d)}
 .idc2 .bk{display:flex;flex-direction:column;gap:.3mm;padding:2.2mm 3mm;font-size:7pt;line-height:1.45}
 .idc2 .bk .nt{margin-top:1.2mm;color:#333;font-size:6.6pt;line-height:1.4}.idc2 .bk .nt span{display:block;font-size:5.5pt;color:#666;line-height:1.25;margin-top:.5mm}
 .idc2 .bk .sg{margin-top:auto;align-items:flex-end;font-size:6.6pt;border-top:.2mm solid #ddd;padding-top:1mm}
-.idc2 .bk .sgd{text-align:center}.idc2 .bk .sgd .stp{width:15mm;margin:0}
+.idc2 .cstamp{position:absolute;width:13mm;height:13mm;object-fit:contain;right:2mm;bottom:.4mm;transform:rotate(-8deg);opacity:.9;pointer-events:none;-webkit-print-color-adjust:exact;print-color-adjust:exact;mix-blend-mode:multiply}.idc2 .bk .sgd{text-align:center}.idc2 .bk .sgd .stp{display:none}.idc2 .bk .sga{display:flex;gap:0;align-items:flex-end}.idc2 .bk{padding:1.2mm 3mm 1mm}.idc2 .bk .nt{font-size:6.1pt;line-height:1.3}.idc2 .bk .nt span{font-size:5.1pt;line-height:1.2}.idc2 .bk .sg{margin-top:0}.idc2 .bk .sga .stp{width:10mm;max-height:10mm;margin:0 -1.2mm 0 0}.idc2 .bk .sga .stp+.stp{transform:rotate(7deg);margin-right:-1.5mm}.idc2 .bk .nt{margin-top:.6mm}.idc2 .bk .sg{padding-top:.5mm;align-items:flex-end}
 .mchk{display:flex;flex-wrap:wrap;gap:6px 14px;padding:6px 0}.mchk label{display:flex;align-items:center;gap:6px;font-weight:500;color:var(--tx);font-size:15px}
 .gtbl td,.gtbl th{padding:4px 5px}.gin{width:62px;border:1px solid var(--ln);border-radius:6px;padding:5px;background:var(--card);color:var(--tx);text-align:center}
 .rank{width:30px;height:30px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--mut);flex:none}
@@ -1438,7 +1438,7 @@ function idCard(p){
   const hdr=`<div class="stripe"></div><div class="ch"><img src="icon-192.png" alt=""><div><b>${esc(center.name)}</b><span dir="ltr" style="display:block">${esc(frName())}</span><span>${SECS[SEC]} · ${esc(center.loc)}</span></div></div>`;
   const front=`<div class="idc2" style="--cc:${cc}">${hdr}
     <div class="tt">${cardTitle(p)} · <span style="font-weight:600;font-size:7pt;direction:ltr;unicode-bidi:isolate">${cardTitleFr(p)}</span></div>
-    <div class="cb"><div class="pp">${p.photo?`<img src="${p.photo}" alt="">`:esc((p.name||p.nameFr||"?").trim()[0])}</div>
+    <div class="cb"><div class="pp">${p.photo?`<img src="${p.photo}" alt="">`:esc((p.name||p.nameFr||"?").trim()[0])}</div>${center.stampAdm?`<img class="cstamp" src="${center.stampAdm}" alt="">`:""}
     <div class="inf"><b class="nA">${esc(p.name||"")}</b>${p.nameFr?`<b class="nF" dir="ltr">${esc(p.nameFr)}</b>`:""}${rw("الرقم","N°",p.regNo,1).replace('class="vl"','class="vl rgv"')}${rows.join("")}</div>
     <div class="qcol2"><div class="qr">${qrSVG("MARKAZ-SALAM|"+(p.regNo||p.id)+"|"+(p.name||p.nameFr))}</div><span dir="ltr" class="qc">${esc(p.regNo||"")}</span></div></div>
     <div class="cf">${yr?"السنة الدراسية / Année scolaire : "+esc(yr):"&nbsp;"}</div></div>`;
@@ -1447,7 +1447,7 @@ function idCard(p){
     ${center.phone?rw("هاتف المركز","Tél. du centre",center.phone,1):""}
     <div class="nt">هذه البطاقة شخصية وهي ملك للمركز، تُبرز عند الطلب، ويُرجى إعادتها عند العثور عليها.
     <span dir="ltr">Carte personnelle, propriété du centre. À présenter sur demande ; merci de la rapporter si vous la trouvez.</span></div>
-    <div class="sg"><span>صالحة للسنة / Valable<br><b dir="ltr">${esc(yr||"........")}</b></span><span class="sgd">${sigDG()}</span></div></div>
+    <div class="sg"><span>صالحة للسنة / Valable<br><b dir="ltr">${esc(yr||"........")}</b></span>${center.stampAdm||center.stampDir?`<span class="sga">${center.stampDir?`<img class="stp" src="${center.stampDir}" alt="">`:""}${center.stampAdm?`<img class="stp" src="${center.stampAdm}" alt="">`:""}</span>`:""}<span class="sgd">${sigDG()}</span></div></div>
     <div class="cf">«خيرُكم مَن تعلَّم القرآنَ وعلَّمه»</div></div>`;
   return `<div class="idpair">${front}${back}</div>`;
 }
@@ -1695,7 +1695,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=71;
+const BUILD=74;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
