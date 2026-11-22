@@ -666,7 +666,7 @@ const nmSub=p=>p&&p.nameFr?`<span class="nfr2" dir="ltr">${esc(p.nameFr)}</span>
 function nmPick(){const m=NMODE();return `<select title="لغة الأسماء في الوثائق" onchange="lsSet('salam_nm',this.value);render()">${[["ar","الأسماء بالعربية"],["fr","الأسماء بالفرنسية"],["both","الأسماء بالعربية والفرنسية"]].map(([k,l])=>`<option value="${k}" ${m===k?"selected":""}>${l}</option>`).join("")}</select>`}
 const studentsOf=h=>activeStudents().filter(s=>s.halaqa===h.name).sort(byName);
 function setStatus(m){const e=$("#status");e.textContent=m.split(" — ")[0];e.title=m;e.className="chip st"+(/تعذّر|خطأ|غير مخوّل|لا صلاحية|غير متصل|بدون إنترنت/.test(m)?" off":"")}
-const LOC_FR="Korofona Sud - Bamako";const locFr=()=>center.locFr&&!/korofina/i.test(center.locFr)?center.locFr:LOC_FR;
+const LOC_FR="Korofina Sud - Bamako";const locFr=()=>center.locFr&&!/korofona/i.test(center.locFr)?center.locFr:LOC_FR;
 const FR_NAME="Markaz As-Salam pour les études Coraniques";const frName=()=>center.nameFr&&!/^(centre as-salam|markaz salam pour)/i.test(center.nameFr)?center.nameFr:FR_NAME;
 function applyCenter(){if(!center.loc||/كوروفينا سود/.test(center.loc))center.loc="كوروفينا صيد - بماكو";document.querySelectorAll(".cName").forEach(e=>e.textContent=center.name);document.querySelectorAll(".cNameFr").forEach(e=>e.textContent=frName());const fd=postName("founder");document.querySelectorAll(".fdua").forEach(e=>e.textContent=fd?`اللهم بارِك في مؤسِّسة هذا المركز ${fd}، واحفظها، واجزِها عنّا وعن طلاب العلم خير الجزاء، واجعل هذا العمل في ميزان حسناتها — آمين ❀`:"اللهم بارك في هذا المركز وفي القائمين عليه — آمين ❀");document.querySelectorAll(".cLoc").forEach(e=>e.textContent=center.loc)}
 
@@ -1711,7 +1711,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=90;
+const BUILD=91;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
