@@ -621,16 +621,17 @@ const D={};COLS.forEach(c=>Object.defineProperty(D,c,{get(){return RAW[c].filter
 function setSec(v){if(SECLOCK&&v!==SECLOCK)return;if(view.dirty){confirmDiscard(()=>setSec(v));return}SEC=v;lsSet("salam_sec",v);document.body.dataset.sec=v;view={name:view.name==="halaqa"||view.name==="list"?(view.name==="list"?"list":"halaqat"):view.name,cat:view.cat};render()}
 const fee=k=>center[k+"_"+SEC]??(SEC==="b"?center[k]:"");
 let center={name:"مركز السلام للدراسات القرآنية",loc:"كوروفينا سود – باماكو",currency:"فرنك",monthlyFee:"",regFee:"",year:"",yearStart:""};
-let FS=null, ROLE="local", ME="", ACCESS={editors:[],teachers:[],viewers:[]};
+let FS=null, ROLE="local", ME="", ACCESS={editors:[],teachers:[],viewers:[]}, MAINOWNER=false;
+const FINPOSTS=["founder","dg","acc","acc2","acc3"]; // لا يطّلع على المالية إلا: المؤسِّسة، المدير العام، المحاسب ونائباه
 let view={name:"home"};
 const can={write:()=>["local","owner","editor"].includes(ROLE),daily:()=>can.write()||ROLE==="teacher",
-  fin:()=>can.write()||ROLE==="accountant"||ROLE==="inspector",finW:()=>can.write()||ROLE==="accountant",
+  fin:()=>!FS||MAINOWNER||FINPOSTS.includes((ACCESS.posts||{})[ME]),finW:()=>can.fin()&&(can.write()||ROLE==="accountant"),
   permit:()=>can.daily()||ROLE==="guard",log:()=>can.write()||ROLE==="inspector",
   data:()=>!["guard","worker","visitor","parent","none"].includes(ROLE),owner:()=>ROLE==="owner"||ROLE==="local"};
 /* positions (المناصب) → permission level */
 const POSTS=[["founder","المؤسِّسة","owner"],["dg","المدير العام","owner"],["dga","المدير المساعد","editor"],["secr","السكرتير","editor"],["secr2","نائب السكرتير","editor"],["acc","المحاسب","accountant"],["acc2","نائب المحاسب","accountant"],["acc3","نائب المحاسب الثاني","accountant"],["sup","المراقب","teacher"],["sup2","نائب المراقب","teacher"],["grd","الحارس","guard"],["grd2","نائب الحارس","guard"],["insp","المفتش العام","inspector"],["insp2","نائب المفتش العام","inspector"],["teacher","مدرس","teacher"],["worker","عامل","worker"],["parent","ولي أمر","parent"],["visitor","زائر","visitor"],["dev","مطور التطبيق","owner"]];
 const POST=Object.fromEntries(POSTS.map(p=>[p[0],{l:p[1],r:p[2]}]));
-const RLV={owner:"كل الصلاحيات وإدارة المستخدمين",editor:"إدخال وتعديل كل البيانات والمالية",accountant:"المالية والرسوم والإيصالات + الاطلاع على الطلاب",inspector:"الاطلاع على كل شيء دون تعديل (ومنه المالية وسجل العمليات)",teacher:"المتابعة والاختبارات والدرجات والقسم الداخلي",guard:"أذونات الخروج والعودة فقط",worker:"الصفحة الرئيسية فقط",visitor:"الصفحة الرئيسية والإحصاءات العامة فقط",parent:"يرى أبناءه فقط",viewer:"اطلاع فقط"};
+const RLV={owner:"كل الصلاحيات وإدارة المستخدمين",editor:"إدخال وتعديل كل البيانات (دون المالية)",accountant:"المالية والرسوم والإيصالات + الاطلاع على الطلاب",inspector:"الاطلاع على البيانات دون تعديل وسجل العمليات (دون المالية)",teacher:"المتابعة والاختبارات والدرجات والقسم الداخلي",guard:"أذونات الخروج والعودة فقط",worker:"الصفحة الرئيسية فقط",visitor:"الصفحة الرئيسية والإحصاءات العامة فقط",parent:"يرى أبناءه فقط",viewer:"اطلاع فقط"};
 const ROLEARR={owner:"owners",editor:"editors",accountant:"accountants",inspector:"inspectors",teacher:"teachers",guard:"guards",worker:"workers",visitor:"visitors",parent:"parents",viewer:"viewers"};
 const ONEPOST=["founder","dg","dga","secr","secr2","acc","acc2","acc3","sup","sup2","grd","grd2","insp","insp2","dev"];
 const DEFPOST={founder:"السيدة الحاجة كورتم تونكارا",dg:"د. إبراهيم موسى جالو",acc:"السيدة بنتا تراورى"};
@@ -709,7 +710,7 @@ async function initCloud(){
     if(!u){$("#login").classList.remove("hide");setStatus("سجّل الدخول للمتابعة");return}
     $("#login").classList.add("hide");
     ME=(u.email||"").toLowerCase();FS=fs;
-    const owner=await isOwnerEmail(ME);
+    const owner=await isOwnerEmail(ME);MAINOWNER=!!owner;
     let started=false;
     fs.doc("settings/access").onSnapshot(s=>{
       ACCESS={...Object.fromEntries(Object.values(ROLEARR).map(k=>[k,[]])),...(s.exists?s.data():{})};
@@ -732,7 +733,7 @@ function subscribe(){
   const subs=[["people"],["halaqat"],["daily",["date",">=",t0]],["exams",["date",">=",f0]],["grades",["date",">=",f0]],["rooms"],["board",["date",">=",t0]],["permits",["date",">=",f0]]];
   if(ROLE==="guard")subs.splice(0,subs.length,["people"],["permits",["date",">=",f0]]);else if(!can.data())subs.length=0;
   if(can.log())subs.push(["logs",["date",">=",t0]]);if(can.write())subs.push(["trash",["date",">=",addMonths(monthOf(today()),-2)+"-01"]]);
-  if(can.fin())subs.push(["finance",["date",">=",f0]],["staffatt",["date",">=",t0]]);
+  if(can.fin())subs.push(["finance",["date",">=",f0]]);if(can.write()||ROLE==="accountant"||ROLE==="inspector")subs.push(["staffatt",["date",">=",t0]]);
   let first=true;const timer=setTimeout(()=>setStatus(navigator.onLine?"تعذّر الوصول إلى قاعدة البيانات — أعد تحميل الصفحة":"لا يوجد اتصال بالإنترنت"),15000);
   subs.forEach(([col,q])=>{
     let ref=FS.collection(col);if(SECLOCK)ref=ref.where("sec","==",SECLOCK);else if(q)ref=ref.where(...q);
@@ -1695,7 +1696,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=77;
+const BUILD=78;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
