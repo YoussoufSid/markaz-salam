@@ -541,7 +541,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
 <script src="qr.js"></script>
 <script src="i18n.js"></script>
 <script src="app2.js"></script>
-<script src="app3.js"></script><script src="app4.js"></script><script>function ownEl(e){e.setAttribute("data-own","");return e}</script>
+<script src="app3.js"></script><script src="app4.js"></script><script src="app5.js"></script><script>function ownEl(e){e.setAttribute("data-own","");return e}</script>
 <script src="firebase-config.js"></script>
 <script>if(window.FIREBASE_CONFIG){document.write('<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"><\/script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"><\/script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"><\/script>')}</script>
 <script>
@@ -598,7 +598,7 @@ const REGMAP={"ط":"ST","إد":"AD","م":"TC","مر":"SV","ح":"GD","ع":"WK"};
 function migrateCls(list){let ch=[];list.forEach(x=>{let m=false;const rm=typeof x.regNo==="string"&&x.regNo.match(/^(إد|مر|ط|م|ح|ع)-(\d)-(\d{4})-(\d+)$/);if(rm){x.regNo=REGMAP[rm[1]]+"-"+rm[2]+"-"+rm[3]+"-"+rm[4];m=true}["arClass","frClass","cls"].forEach(k=>{if(x[k]&&OLDCLS.includes(x[k])){x[k]=normCls(x[k]);m=true}});if(m)ch.push(x)});return ch}
 const qLevels=()=>{const l=String(center.quranLevels||"").split(/[،,\n]/).map(x=>x.trim()).filter(Boolean);return l.length?l:LEVELS};
 const STUDENT=[{g:"النظام والأقسام الدراسية"},{k:"regime",l:"النظام",type:"select",opts:REGIMES},{k:"room",l:"الغرفة (للنظام الداخلي)",type:"room"},{k:"level",l:"مستوى القرآن الكريم (الحفظ والمراجعة)",type:"qlevel"},{k:"dailyAmt",l:"مقدار الحفظ اليومي"},{k:"hifzPos",l:"موضع الحفظ الحالي (سورة وآية)"},{k:"revPos",l:"موضع المراجعة الحالي"},{k:"arClass",l:"الصف — قسم اللغة العربية والتربية الإسلامية",type:"select",opts:CLASSES},{k:"frClass",l:"الصف — قسم اللغة الفرنسية والمواد العصرية",type:"select",opts:CLASSES},{g:"بيانات ولي الأمر"},{k:"guardian",l:"اسم ولي الأمر"},{k:"guardianRel",l:"صلة القرابة",type:"select",opts:["الأب","الأم","الأخ","العم","الخال","آخر"]},{k:"guardianPhone",l:"هاتف ولي الأمر (واتساب)",type:"tel"},{k:"guardianJob",l:"مهنة ولي الأمر"},
- {g:"البيانات الدراسية"},{k:"regNo",l:"رقم التسجيل",ro:1},{k:"year",l:"السنة الدراسية",list:"years"},{k:"start",l:"تاريخ الالتحاق",type:"date"},{k:"halaqa",l:"الحلقة",type:"halaqa"},{k:"memorized",l:"عدد الأجزاء المحفوظة",type:"number",min:0,max:30},{k:"timing",l:"الفترة",type:"select",opts:["صباحية","مسائية","كامل اليوم","عطلة نهاية الأسبوع"]},{k:"health",l:"ملاحظات صحية"},
+ {g:"البيانات الدراسية"},{k:"regNo",l:"رقم التسجيل",ro:1},{k:"year",l:"السنة الدراسية",list:"years"},{k:"start",l:"تاريخ الالتحاق",type:"date"},{k:"halaqa",l:"الحلقة",type:"halaqa"},{k:"memorized",l:"عدد الأجزاء المحفوظة",type:"number",min:0,max:30},{k:"planH",l:"خطة الحفظ اليومية (آيات)",type:"number",min:0,max:60},{k:"planR",l:"خطة المراجعة اليومية (صفحات)",type:"number",min:0,max:20},{k:"timing",l:"الفترة",type:"select",opts:["صباحية","مسائية","كامل اليوم","عطلة نهاية الأسبوع"]},{k:"health",l:"ملاحظات صحية"},
  {g:"الرسوم"},{k:"feeStatus",l:"وضع الرسوم",type:"select",opts:["عادي","مخفّض","معفى"]},{k:"monthlyFee",l:"الرسوم الشهرية (إن اختلفت عن العامة)",type:"number",min:0}];
 const STAFF=[{g:"البيانات الوظيفية"},{k:"regNo",l:"الرقم الوظيفي",ro:1},{k:"job",l:"الوظيفة / المنصب"},{k:"start",l:"تاريخ التعيين",type:"date"},{k:"contract",l:"نوع التعاقد",type:"select",opts:["دائم","مؤقت","متطوع"]},{k:"shift",l:"أوقات الدوام"},{k:"qualification",l:"المؤهل العلمي"},{k:"salary",l:"الراتب الشهري",type:"number",min:0},{k:"emergency",l:"هاتف للطوارئ",type:"tel"},{k:"email",l:"البريد (لربط حساب الدخول)",type:"email"}];
 const EXTRA={teachers:[{k:"program",l:"البرنامج / القسم",type:"select",opts:[...PROGRAMS,"أكثر من برنامج"]},{k:"memorized",l:"عدد الأجزاء المحفوظة",type:"number",min:0,max:30},{k:"ijaza",l:"الإجازة / السند"}],supervisors:[{k:"section",l:"القسم المكلّف به"}],guards:[{k:"post",l:"نوبة الحراسة",type:"select",opts:["نهارية","ليلية","متناوبة"]}],workers:[{k:"task",l:"طبيعة العمل",type:"select",opts:["نظافة","طبخ","صيانة","سائق","آخر"]}],admins:[]};
@@ -759,11 +759,11 @@ function subscribe(){
 function tabs(){
   if(ROLE==="parent")return [["وليّ الأمر",[["kids","kids","أبنائي"]]]];
   if(ALLOWV[ROLE]&&ROLE!=="accountant"){const all={home:["home","home","الرئيسية"],board:["board","bed","أذونات الخروج"]};return [["فضاء المركز",ALLOWV[ROLE].map(k=>all[k])]]}
-  const g1=[["home","home","الرئيسية"],["people","users","الأشخاص"],["halaqat","book","حلقات التحفيظ"],["daily","check","المتابعة اليومية"],["exams","exam","اختبارات التحفيظ"],["grades","award","الدرجات والشهادات"],["times","calendar","جدول الحصص"],["classes","users","توزيع الصفوف"],["board","bed","القسم الداخلي"]];
+  const g1=[["home","home","الرئيسية"],["people","users","الأشخاص"],["halaqat","book","حلقات التحفيظ"],["daily","check","المتابعة اليومية"],["exams","exam","اختبارات التحفيظ"],["grades","award","الدرجات والشهادات"],["times","calendar","جدول الحصص"],["classes","users","توزيع الصفوف"],["board","bed","القسم الداخلي"],["kpi","chart","لوحة المؤشرات"]];
   const g2=[];if(can.fin())g2.push(["finance","wallet","المالية"]);g2.push(["reports","printer","التقارير"]);
   return [["فضاء المركز",ALLOWV[ROLE]?g1.filter(x=>ALLOWV[ROLE].includes(x[0])):g1],["الإدارة",g2]];
 }
-const TITLES={kids:"أبنائي",grades:"الدرجات والشهادات الفصلية",board:"القسم الداخلي",student:"ملف الطالب",home:"لوحة التحكم",people:"الأشخاص",list:"الأشخاص",halaqat:"الحلقات",halaqa:"الحلقات",daily:"المتابعة اليومية",exams:"الاختبارات والشهادات",finance:"المالية",reports:"التقارير",classes:"توزيع الصفوف"};
+const TITLES={kids:"أبنائي",grades:"الدرجات والشهادات الفصلية",board:"القسم الداخلي",student:"ملف الطالب",home:"لوحة التحكم",people:"الأشخاص",list:"الأشخاص",halaqat:"الحلقات",halaqa:"الحلقات",daily:"المتابعة اليومية",exams:"الاختبارات والشهادات",finance:"المالية",reports:"التقارير",classes:"توزيع الصفوف",kpi:"لوحة المؤشرات"};
 function renderShell(){
   const cur=TOP[view.name];document.body.classList.remove("nosb");if(view.name!=="home")document.body.classList.remove("menu");
   $("#nav").innerHTML=tabs().map(([g,items])=>`<div class="gh">${g}</div>`+items.map(([k,ic,l])=>`<button class="${cur===k?"on":""}" onclick="document.body.classList.remove('menu');go('${k}')">${ico(ic)}<span>${l}</span></button>`).join("")).join("")+`<div class="gh">الحساب</div>${ROLE==="visitor"?"":`<button onclick="openSettings()">${ico("settings")}<span>الإعدادات</span></button>`}<button onclick="toggleLang()">${ico("globe")}<span>${LANG==="fr"?"العربية":"Français"}</span></button><button onclick="updateApp()">${ico("refresh")}<span>تحديث التطبيق</span></button><button onclick="doExit()">${ico("uswitch")}<span>خروج</span></button>${FS?`<button onclick="logout()">${ico("logout")}<span>تسجيل الخروج</span></button>`:""}`;
@@ -779,7 +779,7 @@ function renderShell(){
   $("#themeBtn").innerHTML=ico(document.documentElement.dataset.theme==="dark"?"sun":"moon",18);
 }
 function toggleTheme(){const d=document.documentElement;d.dataset.theme=d.dataset.theme==="dark"?"":"dark";lsSet("salam_theme",d.dataset.theme);renderShell()}
-const TOP={kids:"kids",grades:"grades",board:"board",student:"people",home:"home",people:"people",list:"people",halaqat:"halaqat",halaqa:"halaqat",daily:"daily",exams:"exams",finance:"finance",reports:"reports"};
+const TOP={kids:"kids",grades:"grades",board:"board",student:"people",home:"home",people:"people",list:"people",halaqat:"halaqat",halaqa:"halaqat",daily:"daily",exams:"exams",finance:"finance",reports:"reports",kpi:"kpi"};
 function go(name,extra){if(view.dirty){confirmDiscard(()=>{view={name,...(extra||{})};render();scrollTo(0,0)});return}view={name,...(extra||{})};render();scrollTo(0,0)}
 function confirmDiscard(fn){modal("تعديلات غير محفوظة","<p>لديك تعديلات لم تُحفظ في المتابعة. هل تريد تجاهلها؟</p>",`<button class="btn d" id="cdY">تجاهل</button><button class="btn o" onclick="closeModal()">رجوع</button>`);$("#cdY").onclick=()=>{view.dirty=false;closeModal();fn()}}
 function render(){
@@ -788,7 +788,7 @@ function render(){
   renderShell();if(typeof renderBottom==="function")renderBottom();
   if(ROLE==="parent"){view={name:"kids"};}
   if(ALLOWV[ROLE]&&!ALLOWV[ROLE].includes(view.name))view={name:"home"};
-  const V={kids:vKids,grades:vGrades,board:vBoard,student:vStudent,home:vHome,people:vPeople,list:vList,halaqat:vHalaqat,halaqa:vHalaqa,daily:vDaily,exams:vExams,finance:vFinance,reports:vReports,times:vTimes,classes:vClasses}[view.name]||vHome;
+  const V={kids:vKids,grades:vGrades,board:vBoard,student:vStudent,home:vHome,people:vPeople,list:vList,halaqat:vHalaqat,halaqa:vHalaqa,daily:vDaily,exams:vExams,finance:vFinance,reports:vReports,times:vTimes,classes:vClasses,kpi:vKpi}[view.name]||vHome;
   $("#app").innerHTML=V();
   if(view.after){const f=view.after;view.after=null;f()}
 }
@@ -848,6 +848,7 @@ function vHome(){
   const lateP=(D.permits||[]).filter(p=>p.status==="خارج"&&p.until&&p.until<nowLocal());if(lateP.length){n++;h+=`<div class="alert r">🚪 تأخر عن العودة إلى القسم الداخلي: ${lateP.map(p=>esc(p.studentName)).join("، ")} — <a href="#" onclick="go('board',{btab:'permits'});return false">عرض</a></div>`}
   if(ROLE==="owner"){const pq=(typeof REQS!=="undefined"?REQS:[]).filter(r=>(r.status||"pending")==="pending");if(pq.length){n++;h+=`<div class="alert w">🔔 ${pq.length} طلب دخول جديد بانتظار موافقتك — <a href="#" onclick="openSettings();return false">مراجعة الطلبات</a></div>`}}
   const noH=st.filter(s=>!s.halaqa);if(noH.length&&D.halaqat.length){n++;h+=`<div class="alert w">${noH.length} طالبًا غير مسندين إلى حلقة.</div>`}
+  {const sa=typeof smartAlerts==="function"?smartAlerts():{n:0,h:""};n+=sa.n;h+=sa.h}
   if(!n)h+=`<div class="alert ok">لا توجد تنبيهات — الحمد لله.</div>`;
   h=h.replace("%%N%%",n||"0");
   h+=`</div><details class="more"><summary>📂 قاعدة البيانات (الطلاب والعاملون)</summary><div class="tiles">`+ORDER.map(c=>{const all=D.people.filter(p=>p.cat===c);return `<button class="tile" onclick="go('list',{cat:'${c}'})"><div class="ic">${CATS[c].ic}</div><div class="n">${all.filter(isAct).length}</div><div class="l">${CATS[c].t}</div><div class="s">${all.length} سجل إجمالًا</div></button>`}).join("")+`</div></details>`;
@@ -1081,7 +1082,7 @@ function finFees(){
   if(view.fq)rows=rows.filter(r=>r.s.name.includes(view.fq));
   rows.sort((a,b)=>byName(a.s,b.s));
   let h=`<div class="stats"><div class="stat"><div class="v">${money(T.fee)}</div><div class="k">المستحق</div></div><div class="stat"><div class="v">${money(T.pd)}</div><div class="k">المحصّل</div></div><div class="stat"><div class="v" style="color:var(--red)">${money(T.rem)}</div><div class="k">المتبقي</div></div><div class="stat"><div class="v">${T.fee?Math.round(T.pd/T.fee*100):0}%</div><div class="k">نسبة التحصيل</div></div></div>
-  <div class="tools"><input type="search" placeholder="بحث بالاسم…" value="${esc(view.fq||"")}" onchange="view.fq=this.value;render()"><select onchange="view.fh=this.value;render()"><option value="">كل الحلقات</option>${D.halaqat.map(x=>`<option ${view.fh===x.name?"selected":""}>${esc(x.name)}</option>`).join("")}</select><label><input type="checkbox" ${view.only?"checked":""} onchange="view.only=this.checked;render()"> غير المسددين فقط</label></div><div class="list">`;
+  <div class="tools"><button class="btn o s" onclick="arrearsReport()">🖨 كشف المتأخرات</button><input type="search" placeholder="بحث بالاسم…" value="${esc(view.fq||"")}" onchange="view.fq=this.value;render()"><select onchange="view.fh=this.value;render()"><option value="">كل الحلقات</option>${D.halaqat.map(x=>`<option ${view.fh===x.name?"selected":""}>${esc(x.name)}</option>`).join("")}</select><label><input type="checkbox" ${view.only?"checked":""} onchange="view.only=this.checked;render()"> غير المسددين فقط</label></div><div class="list">`;
   h+=rows.map(({s,fee,pd,rem})=>{
     const tag=!fee?`<span class="tag n">معفى</span>`:rem<=0?`<span class="tag">مدفوع</span>`:pd>0?`<span class="tag w">جزئي</span>`:`<span class="tag r">غير مدفوع</span>`;
     const msg=`السلام عليكم ورحمة الله وبركاته،\nنذكّركم برسوم شهر ${monthName(m)} للطالب/الطالبة ${s.name} في ${center.name}.\nالمبلغ المتبقي: ${money(rem)}.\nجزاكم الله خيرًا على تعاونكم.`;
@@ -1702,7 +1703,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=81;
+const BUILD=82;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
