@@ -410,3 +410,13 @@ setInterval(()=>{try{
   const t=TIPS[ROLE]||TIPS[ROLE==="dg"?"owner":""]||TIPS._;
   modal("👋 مرحبًا بك",`<ol style="line-height:2;padding-inline-start:22px;margin:0">${t.map(x=>`<li>${x}</li>`).join("")}</ol>`,`<button class="btn p" onclick="closeModal()">فهمت، ابدأ</button>`);
 }catch(e){}},2500);
+
+/* ---------- أرقام لاتينية في كل الواجهة (شبكة أمان) ---------- */
+(function(){
+  const M={"٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9","۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9"},R=/[٠-٩۰-۹]/g,f=t=>t.replace(R,c=>M[c]);
+  window.latn=f;
+  function fix(n){if(n.nodeType===3){if(R.test(n.nodeValue)){R.lastIndex=0;n.nodeValue=f(n.nodeValue)}R.lastIndex=0}else if(n.nodeType===1&&!/^(SCRIPT|STYLE|TEXTAREA)$/.test(n.tagName)){if(n.placeholder&&R.test(n.placeholder)){R.lastIndex=0;n.placeholder=f(n.placeholder)}R.lastIndex=0;n.childNodes.forEach(fix)}}
+  let t=0;const run=()=>{t=0;try{fix(document.body)}catch(e){}};
+  addEventListener("load",()=>{run();new MutationObserver(()=>{if(!t)t=setTimeout(run,120)}).observe(document.body,{childList:true,subtree:true,characterData:true})});
+  document.addEventListener("input",e=>{const i=e.target;if(i&&i.tagName==="INPUT"&&/^(text|tel|search|)$/.test(i.type)&&R.test(i.value)){R.lastIndex=0;const p=i.selectionStart;i.value=f(i.value);try{i.setSelectionRange(p,p)}catch(x){}}R.lastIndex=0},true);
+})();

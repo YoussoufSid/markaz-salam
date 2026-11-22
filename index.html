@@ -533,7 +533,7 @@ const MONTHS_FR=["janvier","février","mars","avril","mai","juin","juillet","ao�
 const mN=i=>(LANG==="fr"?MONTHS_FR:MONTHS)[i];
 const monthName=m=>m?mN(Number(m.slice(5,7))-1)+" "+m.slice(0,4):"";
 function arDate(d){if(!d)return"";const [y,m,dd]=d.split("-");return Number(dd)+" "+mN(Number(m)-1)+" "+y}
-function hijri(d){try{return new Intl.DateTimeFormat((LANG==="fr"?"fr":"ar-SA")+"-u-ca-islamic-umalqura",{day:"numeric",month:"long",year:"numeric"}).format(d?new Date(d+"T12:00"):new Date())}catch(e){return""}}
+function hijri(d){try{return new Intl.DateTimeFormat((LANG==="fr"?"fr":"ar-SA")+"-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",year:"numeric"}).format(d?new Date(d+"T12:00"):new Date())}catch(e){return""}}
 const DAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 const DAYS_FR=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
 const dayName=d=>(LANG==="fr"?DAYS_FR:DAYS)[new Date(d+"T12:00").getDay()];
@@ -903,7 +903,7 @@ function openDetail(id){
   if(p.cat==="teachers"){const hs=D.halaqat.filter(x=>x.teacherId===p.id).map(x=>x.name);if(hs.length)h+=`<div><span>الحلقات المسندة</span>${esc(hs.join("، "))}</div>`}
   h+=`</div>`;
   if(p.cat==="students"&&can.fin()){const m=monthOf(today()),fee=feeOf(p),pd=paidFor(p.id,m);h+=`<div class="alert ${pd>=fee?"ok":"w"}" style="margin-top:10px">رسوم ${monthName(m)}: ${fee?money(pd)+" من "+money(fee):"معفى/غير محددة"}</div>`}
-  h+=`<div class="note" style="margin-top:8px">آخر تحديث: ${p.updated?new Date(p.updated).toLocaleString("ar"):"—"}</div>`;
+  h+=`<div class="note" style="margin-top:8px">آخر تحديث: ${p.updated?new Date(p.updated).toLocaleString("ar-u-nu-latn"):"—"}</div>`;
   let foot="";
   if(can.write())foot+=`<button class="btn p" onclick="openForm('${p.cat}','${p.id}')">تعديل</button>`;
   foot+=`<button class="btn o" onclick="closeModal();go('reports',{rep:'idcards',icScope:'one',sid:'${p.id}'})">🪪 بطاقة التعريف</button>`;
@@ -991,7 +991,7 @@ function dailyBody(){
   const prev=D.daily.filter(d=>d.halaqaId===x.id&&d.date<view.date).sort((a,b)=>b.date.localeCompare(a.date));
   const ro=!can.daily();
   let cnt={};ATT.forEach(a=>cnt[a[0]]=0);Object.values(view.edit).forEach(r=>{if(r.att)cnt[r.att]++});
-  let h=`<div class="tools">${ATT.map(a=>`<span class="tag ${a[0]==="غ"?"r":a[0]==="ت"?"w":a[0]==="س"?"n":""}">${a[1]}: ${cnt[a[0]]}</span>`).join("")}<span class="sp"></span>${ro?"":`<button class="btn o s" onclick="allPresent()">✓ الكل حاضر</button>`}${doc?`<span class="note">آخر حفظ: ${esc(doc.by||"")} ${doc.updated?new Date(doc.updated).toLocaleTimeString("ar",{hour:"2-digit",minute:"2-digit"}):""}</span>`:`<span class="tag w">لم تُسجَّل بعد</span>`}${ro?"":`<button class="btn o s" onclick="allPresent()">الكل حاضر</button>`}</div>`;
+  let h=`<div class="tools">${ATT.map(a=>`<span class="tag ${a[0]==="غ"?"r":a[0]==="ت"?"w":a[0]==="س"?"n":""}">${a[1]}: ${cnt[a[0]]}</span>`).join("")}<span class="sp"></span>${ro?"":`<button class="btn o s" onclick="allPresent()">✓ الكل حاضر</button>`}${doc?`<span class="note">آخر حفظ: ${esc(doc.by||"")} ${doc.updated?new Date(doc.updated).toLocaleTimeString("ar-u-nu-latn",{hour:"2-digit",minute:"2-digit"}):""}</span>`:`<span class="tag w">لم تُسجَّل بعد</span>`}${ro?"":`<button class="btn o s" onclick="allPresent()">الكل حاضر</button>`}</div>`;
   h+=ss.map(s=>{
     const r=view.edit[s.id]||{},absent=r.att==="غ"||r.att==="س";
     const last=prev.map(d=>d.rec&&d.rec[s.id]).find(q=>q&&q.hifz),lastR=prev.map(d=>d.rec&&d.rec[s.id]).find(q=>q&&q.rev);
@@ -1664,7 +1664,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=65;
+const BUILD=66;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
