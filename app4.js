@@ -474,3 +474,17 @@ async function migrateFin(){
   }catch(e){saveErr(e)}
   if(btn){btn.disabled=false;btn.textContent="نقل"}
 }
+
+/* ===== جدول الصلاحيات (محسوب من منطق الصلاحيات الفعلي) ===== */
+function permMatrix(){
+  const r0=ROLE;const rows=[];
+  try{POSTS.forEach(([k,l,r])=>{ROLE=r;rows.push([l,
+    can.data()?1:0,can.write()?1:0,can.daily()?1:0,can.permit()?1:0,FINPOSTS.includes(k)&&(r==="owner"||r==="editor"||r==="accountant")?1:0,can.log()?1:0,r==="owner"?1:0])})}finally{ROLE=r0}
+  return rows;
+}
+function openPerms(){
+  const H=["الاطلاع على الطلاب والموظفين","تعديل البيانات","المتابعة والدرجات","أذونات الخروج","المالية والرواتب","سجل العمليات","إدارة المستخدمين"];
+  const rows=permMatrix();
+  const tb=`<div style="overflow:auto"><table class="tbl" style="font-size:12px;min-width:620px"><thead><tr><th>المنصب</th>${H.map(h=>`<th style="text-align:center">${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r[0])}</b></td>${r.slice(1).map(v=>`<td style="text-align:center;color:${v?"var(--g)":"#bbb"};font-weight:700">${v?"✓":"—"}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  modal("📋 جدول الصلاحيات",`<p class="note">يوضّح ما يستطيعه كل منصب. «المالك الرئيسي» يملك كل شيء دائمًا. المالية مقتصرة على: المؤسِّسة، المدير العام، المحاسب ونائبيه. ولي الأمر يرى أبناءه فقط، والحارس والعامل والزائر يرون صفحات محدودة.</p>`+tb,"",true);
+}
