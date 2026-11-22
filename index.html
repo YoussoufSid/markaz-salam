@@ -1320,11 +1320,13 @@ async function restoreObj(o){
 /* ================= settings & users ================= */
 function openSettings(){
   const lb=lsGet("salam_lastbackup",null),w=can.write();
-  let h=`<form id="sf" class="grid" onsubmit="return false">
+  let h=acctCard()+(w?`<form id="sf" class="grid" onsubmit="return false">
+    <div class="grp">🏢 بيانات المركز</div>
     <div class="fld full"><label>اسم المركز</label><input name="name" value="${esc(center.name)}" ${w?"":"disabled"}></div>
     <div class="fld full"><label>الموقع</label><input name="loc" value="${esc(center.loc)}" ${w?"":"disabled"}></div>
     <div class="fld"><label>هاتف المركز</label><input name="phone" value="${esc(center.phone||"")}" ${w?"":"disabled"}></div>
     <div class="fld"><label>السنة الدراسية الحالية</label><input name="year" placeholder="2026-2027" value="${esc(center.year||"")}" ${w?"":"disabled"}></div>
+    <div class="grp">📚 الدراسة والدرجات</div>
     <div class="fld full"><label>📖 مستويات القرآن الكريم — الحفظ والمراجعة معًا (حسب تقسيم الإدارة، افصل بينها بفاصلة)</label><input name="quranLevels" value="${esc(center.quranLevels||LEVELS.join("، "))}" ${w?"":"disabled"}></div>
     <div class="fld full"><label>مواد قسم العربية والتربية الإسلامية مع المعامل (المادة:المعامل، افصل بفاصلة)</label><textarea name="subj_ar" rows="2" ${w?"":"disabled"}>${esc(center.subj_ar||DEF_SUBJ.ar)}</textarea></div>
     <div class="fld full"><label>مواد قسم الفرنسية والمواد العصرية مع المعامل (Matière:coef)</label><textarea name="subj_fr" rows="2" dir="ltr" ${w?"":"disabled"}>${esc(center.subj_fr||DEF_SUBJ.fr)}</textarea></div>
@@ -1335,10 +1337,10 @@ function openSettings(){
     <div class="fld"><label>لغة أسماء الطلاب في الوثائق (الافتراضي)</label><select name="nameMode" ${w?"":"disabled"}>${[["both","بالعربية والفرنسية معًا"],["ar","بالعربية فقط"],["fr","بالفرنسية فقط"]].map(([k,l])=>`<option value="${k}" ${(center.nameMode||"both")===k?"selected":""}>${l}</option>`).join("")}</select></div>
     <div class="grp">🏛️ الهيكل الإداري (تظهر الأسماء في التوقيعات والإيصالات)</div>
     ${ONEPOST.map(k=>`<div class="fld"><label>${POST[k].l}</label><input name="post_${k}" value="${esc(postName(k))}" ${w?"":"disabled"}></div>`).join("")}
-    ${can.write()?`<div class="fld"><label>الرسوم الشهرية (ذهاب وإياب) — ${SECS[SEC]}</label><input name="monthlyFee" type="number" min="0" value="${esc(fee("monthlyFee")||"")}"></div><div class="fld"><label>الرسوم الشهرية (نظام داخلي) — ${SECS[SEC]}</label><input name="boardFee" type="number" min="0" value="${esc(fee("boardFee")||"")}"></div>
+    ${can.write()&&can.fin()?`<div class="grp">💰 الرسوم</div><div class="fld"><label>الرسوم الشهرية (ذهاب وإياب) — ${SECS[SEC]}</label><input name="monthlyFee" type="number" min="0" value="${esc(fee("monthlyFee")||"")}"></div><div class="fld"><label>الرسوم الشهرية (نظام داخلي) — ${SECS[SEC]}</label><input name="boardFee" type="number" min="0" value="${esc(fee("boardFee")||"")}"></div>
     <div class="fld"><label>رسوم التسجيل — ${SECS[SEC]}</label><input name="regFee" type="number" min="0" value="${esc(fee("regFee")||"")}"></div>
     <div class="fld"><label>العملة</label><input name="currency" value="${esc(center.currency||"فرنك")}"></div>`:""}
-  </form>
+  </form>`:centerSummary())+`
   <p class="note">${FS?"البيانات في قاعدة البيانات السحابية ومشتركة بين الأجهزة، وتعمل مؤقتًا دون إنترنت ثم تتزامن.":"البيانات محفوظة داخل هذا الجهاز. احفظ نسخة احتياطية بانتظام، واستعملها لنقل البيانات بين الأجهزة."} ${lb?"آخر نسخة احتياطية: "+lb.slice(0,10):"لم تُحفظ أي نسخة احتياطية بعد."}</p>`;
   if(w)h+=`<div class="grp" style="margin-top:14px">🔏 الأختام</div><div class="note">ارفع صورة الختم (يمكن رفع الصورة الأصلية بخلفية سوداء أو بيضاء، فتُحوَّل تلقائيًا إلى حبر أزرق شفاف). يظهر ختم المدير مع توقيع المدير العام، وختم الإدارة في وسط التواقيع على الوثائق المطبوعة.</div><div class="grid">${[["stampDir","ختم المدير"],["stampAdm","ختم الإدارة"]].map(([k,l])=>`<div class="fld"><label>${l}</label><div id="sp_${k}" style="min-height:70px">${center[k]?`<img class="stp" src="${center[k]}" alt="">`:`<span class="note">لم يُرفع بعد</span>`}</div><input type="file" accept="image/*" onchange="stampPick(this,'${k}')"><button class="btn o s" type="button" onclick="stampDel('${k}')">حذف</button></div>`).join("")}</div>`;
   h+=`<div class="grp" style="margin-top:14px">🔒 الأمان</div><div class="grid" style="margin-top:8px"><div class="fld"><label>القفل التلقائي بعد عدم الاستخدام</label><select onchange="lsSet('salam_lockmin',Number(this.value));toast('✓ تم')">${[[1,"دقيقة"],[3,"3 دقائق"],[5,"5 دقائق"],[10,"10 دقائق"],[30,"30 دقيقة"],[0,"بدون قفل تلقائي"]].map(([v,l])=>`<option value="${v}" ${lockMin()===v?"selected":""}>${l}</option>`).join("")}</select></div>
@@ -1349,7 +1351,7 @@ function openSettings(){
   setTimeout(()=>foldModal(),0);
   modal("⚙︎ الإعدادات",h,`${w?`<button class="btn o" onclick="closeModal();seedOffer()">📥 استيراد بيانات المركز</button><button class="btn p" onclick="saveSettings()">حفظ</button><button class="btn o" onclick="backupDialog()">⬇ نسخة احتياطية</button>`:""}${w?`<button class="btn o" onclick="pickRestore()">⬆ استرجاع نسخة</button><button class="btn o" onclick="yearModal()">🎓 سنة دراسية جديدة</button>`:""}<button class="btn o" onclick="changePin()">🔒 الرمز السري</button>`);
 }
-async function saveSettings(){const f=readForm("sf");const po={};Object.keys(f).forEach(k=>{if(k.startsWith("post_")){po[k.slice(5)]=f[k];delete f[k]}});f.posts=po;["monthlyFee","regFee","boardFee"].forEach(k=>{if(k in f){f[k+"_"+SEC]=f[k];delete f[k]}});const c={...center,...f};try{await saveCenter(c);closeModal();toast("تم الحفظ");render()}catch(e){saveErr(e)}}
+async function saveSettings(){if(!can.write()){toast("ليست لديك صلاحية التعديل");return}const f=readForm("sf");const po={};Object.keys(f).forEach(k=>{if(k.startsWith("post_")){po[k.slice(5)]=f[k];delete f[k]}});f.posts=po;["monthlyFee","regFee","boardFee"].forEach(k=>{if(k in f){f[k+"_"+SEC]=f[k];delete f[k]}});const c={...center,...f};try{await saveCenter(c);closeModal();toast("تم الحفظ");render()}catch(e){saveErr(e)}}
 const ROLES=Object.fromEntries(Object.entries(ROLEARR).map(([r,k])=>[k,RLV[r]]));
 const postOpts=(sel,local)=>POSTS.filter(p=>p[0]!=="visitor"&&!(local&&p[0]==="parent")).map(([k,l,r])=>`<option value="${k}" ${sel===k?"selected":""}>${l} — ${RLV[r]}</option>`).join("");
 function postFill(f){const k=f.post.value;if(ONEPOST.includes(k)&&postName(k)&&!f.name.value.trim())f.name.value=postName(k);const hint=f.querySelector(".phint");if(hint)hint.textContent="الصلاحيات: "+RLV[POST[k].r]}
@@ -1703,7 +1705,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=82;
+const BUILD=84;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}

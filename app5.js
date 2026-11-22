@@ -118,3 +118,13 @@ function arrearsPrint(){
   const rows=arrearsRows(),tot=rows.reduce((a,r)=>a+r.tot,0);
   printHTML(`<div class="paper">${paperHead("كشف متأخرات الرسوم")}<table class="tbl"><tr><th>#</th><th>الطالب</th><th>الحلقة</th><th>أشهر</th><th>المبلغ</th></tr>${rows.map((r,i)=>`<tr><td class="c">${i+1}</td><td>${esc(r.s.name)}</td><td>${esc(r.s.halaqa||"")}</td><td class="c">${r.cnt}</td><td class="c">${money(r.tot)}</td></tr>`).join("")}<tr><td colspan="4"><b>الإجمالي</b></td><td class="c"><b>${money(tot)}</b></td></tr></table></div>`)
 }
+
+/* ===== الإعدادات: بطاقة الحساب وملخص المركز لمن لا يملك صلاحية التعديل ===== */
+function acctCard(){
+  const nm=(typeof CUR!=="undefined"&&CUR&&CUR.name)||(FS?ME:"")||"المستخدم";
+  const po=(typeof CUR!=="undefined"&&CUR)?postOf(CUR):(FS&&ACCESS.posts&&POST[ACCESS.posts[ME]]?POST[ACCESS.posts[ME]].l:"");
+  return `<div class="row" style="margin-bottom:10px"><div class="grow"><div class="nm">${esc(nm)}${po?` · ${esc(po)}`:""}</div><div class="mt">${esc(RLV[ROLE]||"")}</div>${FS?`<div class="mt" dir="ltr" style="text-align:start">${esc(ME)}</div>`:""}</div>${can.write()?"":`<span class="tag n">صلاحيات محدودة</span>`}</div>`;
+}
+function centerSummary(){
+  return `<div class="note" style="margin-bottom:8px">${esc(center.name)}${center.loc?" — "+esc(center.loc):""}${center.phone?" — <span dir=\"ltr\">"+esc(center.phone)+"</span>":""}${center.year?" — "+esc(center.year):""}<br>إعدادات المركز يعدّلها أصحاب صلاحية التعديل فقط.</div>`;
+}
