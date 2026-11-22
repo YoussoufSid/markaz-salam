@@ -415,8 +415,36 @@ setInterval(()=>{try{
 (function(){
   const M={"٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9","۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9"},R=/[٠-٩۰-۹]/g,f=t=>t.replace(R,c=>M[c]);
   window.latn=f;
-  function fix(n){if(n.nodeType===3){if(R.test(n.nodeValue)){R.lastIndex=0;n.nodeValue=f(n.nodeValue)}R.lastIndex=0}else if(n.nodeType===1&&!/^(SCRIPT|STYLE|TEXTAREA)$/.test(n.tagName)){if(n.placeholder&&R.test(n.placeholder)){R.lastIndex=0;n.placeholder=f(n.placeholder)}R.lastIndex=0;n.childNodes.forEach(fix)}}
+  const RG=/\b(?:ST|AD|TC|SV|GD|WK)-[0-9A-Za-z][0-9A-Za-z-]*/g;
+  function wrapReg(n){const v=n.nodeValue;RG.lastIndex=0;if(!RG.test(v))return;RG.lastIndex=0;const fr=document.createDocumentFragment();let last=0,m;
+    while((m=RG.exec(v))){if(m.index>last)fr.appendChild(document.createTextNode(v.slice(last,m.index)));const b=document.createElement("bdi");b.dir="ltr";b.className="rgn";b.textContent=m[0];fr.appendChild(b);last=m.index+m[0].length}
+    if(last<v.length)fr.appendChild(document.createTextNode(v.slice(last)));n.parentNode.replaceChild(fr,n)}
+  function fix(n){if(n.nodeType===3){if(R.test(n.nodeValue)){R.lastIndex=0;n.nodeValue=f(n.nodeValue)}R.lastIndex=0;const pt=n.parentNode&&n.parentNode.nodeName;if(pt&&!/^(BDI|SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(pt))wrapReg(n)}else if(n.nodeType===1&&!/^(SCRIPT|STYLE|TEXTAREA)$/.test(n.tagName)){if(n.tagName==="INPUT"&&(n.name==="regNo"||/^(ST|AD|TC|SV|GD|WK)-/.test(n.value||""))){n.dir="ltr";n.style.textAlign="start"}if(n.placeholder&&R.test(n.placeholder)){R.lastIndex=0;n.placeholder=f(n.placeholder)}R.lastIndex=0;Array.from(n.childNodes).forEach(fix)}}
   let t=0;const run=()=>{t=0;try{fix(document.body)}catch(e){}};
   addEventListener("load",()=>{run();new MutationObserver(()=>{if(!t)t=setTimeout(run,120)}).observe(document.body,{childList:true,subtree:true,characterData:true})});
   document.addEventListener("input",e=>{const i=e.target;if(i&&i.tagName==="INPUT"&&/^(text|tel|search|)$/.test(i.type)&&R.test(i.value)){R.lastIndex=0;const p=i.selectionStart;i.value=f(i.value);try{i.setSelectionRange(p,p)}catch(x){}}R.lastIndex=0},true);
 })();
+
+/* ---------- الأختام: رفع، تحويل إلى حبر شفاف، واستعمال في الطباعة ---------- */
+function stampPick(inp,key){
+  const f=inp.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{const im=new Image();im.onload=async()=>{
+    try{const W=420,H=Math.round(im.height*W/im.width),c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0,W,H);
+      const d=x.getImageData(0,0,W,H),px=d.data;
+      const L=i=>.299*px[i]+.587*px[i+1]+.114*px[i+2];
+      const dark=(L(0)+L((W-1)*4)+L((H-1)*W*4)+L(((H-1)*W+W-1)*4))/4<128;
+      const ink=[22,52,140];
+      for(let i=0;i<px.length;i+=4){let a=dark?L(i):255-L(i);a=Math.max(0,Math.min(255,(a-30)*1.25));px[i]=ink[0];px[i+1]=ink[1];px[i+2]=ink[2];px[i+3]=a}
+      x.putImageData(d,0,0);const url=c.toDataURL("image/png");
+      await saveCenter({...center,[key]:url});$("#sp_"+key).innerHTML=`<img class="stp" src="${url}" alt="">`;toast("✓ حُفظ الختم")}
+    catch(e){saveErr(e)}};
+    im.onerror=()=>toast("تعذّر قراءة الصورة");im.src=rd.result};
+  rd.readAsDataURL(f);
+}
+async function stampDel(key){try{const c={...center};delete c[key];await saveCenter(c);const e=$("#sp_"+key);if(e)e.innerHTML='<span class="note">لم يُرفع بعد</span>';toast("حُذف الختم")}catch(e){saveErr(e)}}
+function withAdmStamp(html){
+  if(!center.stampAdm)return html;
+  try{const t=document.createElement("template");t.innerHTML=html;
+    t.content.querySelectorAll(".sign").forEach(s=>{if(s.querySelector(".stpA"))return;const sp=document.createElement("span");sp.className="stpA";sp.innerHTML=`<img class="stp" src="${center.stampAdm}" alt="">`;const k=s.children;if(k.length>=2)s.insertBefore(sp,k[1]);else s.appendChild(sp)});
+    return t.innerHTML}catch(e){return html}
+}

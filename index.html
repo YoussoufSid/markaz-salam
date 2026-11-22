@@ -395,6 +395,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
 .fold>.grp,.grp.fh{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between}
 .grp.fh::after{content:"▾";font-size:14px;transition:transform .2s;opacity:.7}.grp.fh.cl::after{transform:rotate(90deg)}
 #gs{width:100%}#gsr .row{cursor:pointer}
+.stp{width:92px;height:auto;max-height:92px;object-fit:contain;opacity:.92;transform:rotate(-5deg);display:inline-block;margin-top:2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sign .stpA{text-align:center}
 #splash .dua{font-size:13px;padding:10px 16px;margin-top:10px;opacity:.9}
 #gate{position:fixed;inset:0;z-index:60;background:#f4f1e8;overflow:hidden;transition:opacity .8s;--gw:84.8vh}
 #gate::before{content:"";position:absolute;inset:-30px;background:url(gate.jpg) center/cover;filter:blur(18px) brightness(1.05);opacity:.8}
@@ -607,7 +608,7 @@ const ROLEARR={owner:"owners",editor:"editors",accountant:"accountants",inspecto
 const ONEPOST=["founder","dg","dga","secr","secr2","acc","acc2","acc3","sup","sup2","grd","grd2","insp","insp2","dev"];
 const DEFPOST={founder:"السيدة الحاجة كورتم تونكارا",dg:"د. إبراهيم موسى جالو",acc:"السيدة بنتا تراورى"};
 const postName=k=>{const v=(center.posts||{})[k];return v!=null&&v!==""?v:(DEFPOST[k]||"")};
-const sigDG=()=>`المدير العام: ${esc(postName("dg"))}<br>............`;
+const sigDG=()=>`المدير العام: ${esc(postName("dg"))}<br>${center.stampDir?`<img class="stp" src="${center.stampDir}" alt="">`:"............"}`;
 const postOf=u=>u&&u.post&&POST[u.post]?POST[u.post].l:"";
 const WR={people:"write",halaqat:"write",rooms:"write",trash:"write",finance:"finW",staffatt:"finW",daily:"daily",exams:"daily",grades:"daily",board:"daily",portal:"daily",permits:"permit"};
 const canCol=c=>c==="logs"||!WR[c]?can.write()||c==="logs":can[WR[c]]();
@@ -1143,7 +1144,7 @@ function finSum(){
 /* ================= REPORTS ================= */
 function paperHead(title){return `<div class="ph"><img src="icon-192.png" alt=""><div class="t"><b>${esc(center.name)}</b><span style="display:block;color:var(--gold);font-weight:700">${SECS[SEC]}</span><span class="note">${esc(center.loc)}${center.phone?" — هاتف: "+esc(center.phone):""}</span></div><div class="d">${arDate(today())}<br>${hijri()}</div></div><h2>${title}</h2>`}
 function fitZoom(el){if(!el)return;const c=el.firstElementChild;if(!c)return;c.style.zoom=1;const w=c.scrollWidth,a=el.clientWidth;if(w>a)c.style.zoom=(a/w).toFixed(3)}
-function printHTML(html,land){let st=$("#pgsz");if(!st){st=document.createElement("style");st.id="pgsz";document.head.appendChild(st)}st.textContent="@media print{@page{size:A4 "+(land?"landscape":"portrait")+";margin:"+(land?"8mm":"12mm")+"}}";$("#print").innerHTML=html;setTimeout(()=>{try{window.print()}catch(e){toast("الطباعة غير متاحة هنا")}},150)}
+function printHTML(html,land){html=withAdmStamp(html);let st=$("#pgsz");if(!st){st=document.createElement("style");st.id="pgsz";document.head.appendChild(st)}st.textContent="@media print{@page{size:A4 "+(land?"landscape":"portrait")+";margin:"+(land?"8mm":"12mm")+"}}";$("#print").innerHTML=html;setTimeout(()=>{try{window.print()}catch(e){toast("الطباعة غير متاحة هنا")}},150)}
 const REPS=[["weekly","استمارة المتابعة الأسبوعية"],["roster","كشوف الصفوف والمستويات"],["student","بطاقة طالب"],["halaqa","كشف حلقة"],["att","الحضور الشهري لحلقة"],["progress","تقرير الحفظ العام"],["staff","كشف العاملين"],["satt","حضور العاملين الشهري"],["finance","التقرير المالي الشهري"],["unpaid","المتأخرون في الرسوم"],["exams","نتائج الاختبارات"],["idcards","بطاقات التعريف"]];
 function vReports(){
   const reps=REPS.filter(r=>can.fin()||!["finance","unpaid","satt"].includes(r[0]));
@@ -1304,6 +1305,7 @@ function openSettings(){
     <div class="fld"><label>العملة</label><input name="currency" value="${esc(center.currency||"فرنك")}"></div>`:""}
   </form>
   <p class="note">${FS?"البيانات في قاعدة البيانات السحابية ومشتركة بين الأجهزة، وتعمل مؤقتًا دون إنترنت ثم تتزامن.":"البيانات محفوظة داخل هذا الجهاز. احفظ نسخة احتياطية بانتظام، واستعملها لنقل البيانات بين الأجهزة."} ${lb?"آخر نسخة احتياطية: "+lb.slice(0,10):"لم تُحفظ أي نسخة احتياطية بعد."}</p>`;
+  if(w)h+=`<div class="grp" style="margin-top:14px">🔏 الأختام</div><div class="note">ارفع صورة الختم (يمكن رفع الصورة الأصلية بخلفية سوداء أو بيضاء، فتُحوَّل تلقائيًا إلى حبر أزرق شفاف). يظهر ختم المدير مع توقيع المدير العام، وختم الإدارة في وسط التواقيع على الوثائق المطبوعة.</div><div class="grid">${[["stampDir","ختم المدير"],["stampAdm","ختم الإدارة"]].map(([k,l])=>`<div class="fld"><label>${l}</label><div id="sp_${k}" style="min-height:70px">${center[k]?`<img class="stp" src="${center[k]}" alt="">`:`<span class="note">لم يُرفع بعد</span>`}</div><input type="file" accept="image/*" onchange="stampPick(this,'${k}')"><button class="btn o s" type="button" onclick="stampDel('${k}')">حذف</button></div>`).join("")}</div>`;
   h+=`<div class="grp" style="margin-top:14px">🔒 الأمان</div><div class="grid" style="margin-top:8px"><div class="fld"><label>القفل التلقائي بعد عدم الاستخدام</label><select onchange="lsSet('salam_lockmin',Number(this.value));toast('✓ تم')">${[[1,"دقيقة"],[3,"3 دقائق"],[5,"5 دقائق"],[10,"10 دقائق"],[30,"30 دقيقة"],[0,"بدون قفل تلقائي"]].map(([v,l])=>`<option value="${v}" ${lockMin()===v?"selected":""}>${l}</option>`).join("")}</select></div>
    <div class="fld" style="align-self:end;display:flex;gap:6px;flex-wrap:wrap">${can.log()?`<button class="btn o" onclick="openLog()">📜 سجل العمليات</button>`:""}${can.write()?`<button class="btn o" onclick="openTrash()">🗑️ سلة المحذوفات</button>`:""}</div></div>`;
   if(FS)h+=`<div class="note">الحساب: <span dir="ltr">${esc(ME)}</span> — ${({owner:"المالك",editor:"إدخال وتعديل",teacher:"مدرس",viewer:"اطلاع فقط"})[ROLE]||""} · <a href="#" onclick="logout();return false">تسجيل الخروج</a></div>`;
@@ -1664,7 +1666,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=66;
+const BUILD=68;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
