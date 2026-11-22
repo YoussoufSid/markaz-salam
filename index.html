@@ -219,6 +219,10 @@ body[data-sec=g]{--secc:#a0336b}body{--secc:#0b7a3e}
 .secsw button:disabled{opacity:.35;cursor:not-allowed}
 .qbtn{margin:4px 14px 12px;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--g);color:#fff;border:0;border-radius:12px;padding:12px;font-weight:700;cursor:pointer}
 #nav{display:flex;flex-direction:column;gap:2px;padding:0 10px 14px}
+#side #nav{overflow:visible;flex:none;max-width:none;margin:0}
+#side{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#side .foot{flex:none}
+body.nosb #side,body.menu #side{height:100vh;height:100dvh}
 #nav .gh{font-size:12px;color:var(--mut);margin:12px 8px 4px;font-weight:700}
 #nav button{display:flex;align-items:center;gap:10px;background:none;border:0;border-radius:10px;padding:10px 12px;cursor:pointer;color:var(--tx);text-align:start;font-weight:500}
 #nav button:hover{background:var(--gl)}
@@ -1653,7 +1657,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=61;
+const BUILD=62;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
