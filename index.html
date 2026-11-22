@@ -466,7 +466,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
   <div class="mflag"><i style="background:#14b53a"></i><i style="background:#fcd116"></i><i style="background:#ce1126"></i></div>
   <h1 class="wel cName">مركز السلام للدراسات القرآنية</h1>
   <div class="wfr cNameFr" dir="ltr">Markaz As-Salam pour les études Coraniques</div>
-  <div class="loc cLoc">كوروفينا سود – باماكو</div>
+  <div class="loc cLoc">كوروفينا صيد - بماكو</div>
   <div class="orn">❀ &nbsp; ❀ &nbsp; ❀</div>
   <div class="salat">اللهم صلِّ وسلِّم وبارك على نبينا محمد، وعلى آله وصحبه أجمعين <span class="saw">ﷺ</span></div>
   <div class="tick"><div class="tk"><span class="fdua"></span><span class="fdua"></span></div></div>
@@ -514,7 +514,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
 <div id="shell">
  <aside id="side">
   <div class="stripe"></div>
-  <div class="brand"><img src="icon-192.png" alt=""><div><b class="cName">مركز السلام للدراسات القرآنية</b><span class="cLoc">كوروفينا سود – باماكو</span><br><span id="sYear"></span></div></div>
+  <div class="brand"><img src="icon-192.png" alt=""><div><b class="cName">مركز السلام للدراسات القرآنية</b><span class="cLoc">كوروفينا صيد - بماكو</span><br><span id="sYear"></span></div></div>
   <div class="secsw" id="secsw"></div>
   <button class="qbtn" id="qbtn"></button>
   <nav id="nav"></nav>
@@ -625,7 +625,7 @@ const inSec=col=>x=>secOf(x,col)===SEC;
 const D={};COLS.forEach(c=>Object.defineProperty(D,c,{get(){return RAW[c].filter(inSec(c))},set(v){RAW[c]=v},enumerable:true}));
 function setSec(v){if(SECLOCK&&v!==SECLOCK)return;if(view.dirty){confirmDiscard(()=>setSec(v));return}SEC=v;lsSet("salam_sec",v);document.body.dataset.sec=v;view={name:view.name==="halaqa"||view.name==="list"?(view.name==="list"?"list":"halaqat"):view.name,cat:view.cat};render()}
 const fee=k=>center[k+"_"+SEC]??(SEC==="b"?center[k]:"");
-let center={name:"مركز السلام للدراسات القرآنية",loc:"كوروفينا سود – باماكو",currency:"فرنك",monthlyFee:"",regFee:"",year:"",yearStart:""};
+let center={name:"مركز السلام للدراسات القرآنية",loc:"كوروفينا صيد - بماكو",currency:"فرنك",monthlyFee:"",regFee:"",year:"",yearStart:""};
 let FS=null, ROLE="local", ME="", ACCESS={editors:[],teachers:[],viewers:[]}, MAINOWNER=false;
 const FINPOSTS=["founder","dg","acc","acc2","acc3"]; // لا يطّلع على المالية إلا: المؤسِّسة، المدير العام، المحاسب ونائباه
 let view={name:"home"};
@@ -665,8 +665,9 @@ const nmSub=p=>p&&p.nameFr?`<span class="nfr2" dir="ltr">${esc(p.nameFr)}</span>
 function nmPick(){const m=NMODE();return `<select title="لغة الأسماء في الوثائق" onchange="lsSet('salam_nm',this.value);render()">${[["ar","الأسماء بالعربية"],["fr","الأسماء بالفرنسية"],["both","الأسماء بالعربية والفرنسية"]].map(([k,l])=>`<option value="${k}" ${m===k?"selected":""}>${l}</option>`).join("")}</select>`}
 const studentsOf=h=>activeStudents().filter(s=>s.halaqa===h.name).sort(byName);
 function setStatus(m){const e=$("#status");e.textContent=m.split(" — ")[0];e.title=m;e.className="chip st"+(/تعذّر|خطأ|غير مخوّل|لا صلاحية|غير متصل|بدون إنترنت/.test(m)?" off":"")}
+const LOC_FR="Korofona Sud - Bamako";const locFr=()=>center.locFr&&!/korofina/i.test(center.locFr)?center.locFr:LOC_FR;
 const FR_NAME="Markaz As-Salam pour les études Coraniques";const frName=()=>center.nameFr&&!/^(centre as-salam|markaz salam pour)/i.test(center.nameFr)?center.nameFr:FR_NAME;
-function applyCenter(){document.querySelectorAll(".cName").forEach(e=>e.textContent=center.name);document.querySelectorAll(".cNameFr").forEach(e=>e.textContent=frName());const fd=postName("founder");document.querySelectorAll(".fdua").forEach(e=>e.textContent=fd?`اللهم بارِك في مؤسِّسة هذا المركز ${fd}، واحفظها، واجزِها عنّا وعن طلاب العلم خير الجزاء، واجعل هذا العمل في ميزان حسناتها — آمين ❀`:"اللهم بارك في هذا المركز وفي القائمين عليه — آمين ❀");document.querySelectorAll(".cLoc").forEach(e=>e.textContent=center.loc)}
+function applyCenter(){if(!center.loc||/كوروفينا سود/.test(center.loc))center.loc="كوروفينا صيد - بماكو";document.querySelectorAll(".cName").forEach(e=>e.textContent=center.name);document.querySelectorAll(".cNameFr").forEach(e=>e.textContent=frName());const fd=postName("founder");document.querySelectorAll(".fdua").forEach(e=>e.textContent=fd?`اللهم بارِك في مؤسِّسة هذا المركز ${fd}، واحفظها، واجزِها عنّا وعن طلاب العلم خير الجزاء، واجعل هذا العمل في ميزان حسناتها — آمين ❀`:"اللهم بارك في هذا المركز وفي القائمين عليه — آمين ❀");document.querySelectorAll(".cLoc").forEach(e=>e.textContent=center.loc)}
 
 async function put(col,obj){
   if(!canCol(col)){toast("ليست لديك صلاحية لهذا الإجراء");throw {code:"permission-denied"}}
@@ -1327,7 +1328,7 @@ function openSettings(){
   let h=acctCard()+(w?`<form id="sf" class="grid" onsubmit="return false">
     <div class="grp">🏢 بيانات المركز</div>
     <div class="fld full"><label>اسم المركز</label><input name="name" value="${esc(center.name)}" ${w?"":"disabled"}></div>
-    <div class="fld full"><label>الموقع</label><input name="loc" value="${esc(center.loc)}" ${w?"":"disabled"}></div>
+    <div class="fld"><label>الموقع (بالعربية)</label><input name="loc" value="${esc(center.loc)}" ${w?"":"disabled"}></div><div class="fld"><label>Localisation (français)</label><input name="locFr" dir="ltr" value="${esc(locFr())}" ${w?"":"disabled"}></div>
     <div class="fld"><label>هاتف المركز</label><input name="phone" value="${esc(center.phone||"")}" ${w?"":"disabled"}></div>
     <div class="fld"><label>السنة الدراسية الحالية</label><input name="year" placeholder="2026-2027" value="${esc(center.year||"")}" ${w?"":"disabled"}></div>
     <div class="grp">📚 الدراسة والدرجات</div>
@@ -1449,7 +1450,7 @@ function idCard(p){
   const rw=(a,b,v,ltr)=>v?`<div class="rw"><span class="lb">${a}<i>${b}</i></span><span class="vl"${ltr?' dir="ltr"':''}>${esc(v)}</span></div>`:"";
   const rows=isS?[rw("القرآن","Coran",lv),rw("العربي","Arabe",cl(p.arClass)),rw("الفرنسي","Français",cl(p.frClass)),rw("النظام","Régime",p.regime)]
                 :[rw("الوظيفة","Fonction",p.job),rw("البرنامج","Programme",p.program),rw("الهاتف","Tél.",p.phone,1)];
-  const hdr=`<div class="stripe"></div><div class="ch"><img src="icon-192.png" alt=""><div><b>${esc(center.name)}</b><span dir="ltr" style="display:block">${esc(frName())}</span><span>${SECS[SEC]} · ${esc(center.loc)}</span></div></div>`;
+  const hdr=`<div class="stripe"></div><div class="ch"><img src="icon-192.png" alt=""><div><b>${esc(center.name)}</b><span dir="ltr" style="display:block">${esc(frName())}</span><span>${SECS[SEC]} · ${esc(locFr())}</span></div></div>`;
   const front=`<div class="idc2" style="--cc:${cc}">${hdr}
     <div class="tt">${cardTitle(p)} · <span style="font-weight:600;font-size:7pt;direction:ltr;unicode-bidi:isolate">${cardTitleFr(p)}</span></div>
     <div class="cb"><div class="pp">${p.photo?`<img src="${p.photo}" alt="">`:esc((p.name||p.nameFr||"?").trim()[0])}</div>
@@ -1709,7 +1710,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=87;
+const BUILD=88;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
