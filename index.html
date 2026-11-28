@@ -1685,7 +1685,7 @@ function gateGo(){const g=$("#gate");g.classList.add("go");setTimeout(()=>{g.cla
 let gateNext=null;
 function exitGate(next){document.body.classList.remove("menu");const g=$("#gate");gateNext=next;g.className="ex";g.querySelector(".gl").textContent="بوابة الخروج";g.querySelector(".gv").textContent="رافقتكم السلامة";g.querySelector(".gr").textContent="شكرًا لكم — نلقاكم على خير";g.querySelector(".gmsg").innerHTML="في أمان الله وحفظه<br><small>سبحانك اللهم وبحمدك، أشهد أن لا إله إلا أنت، أستغفرك وأتوب إليك</small>";clearTimeout(g._t);g._t=setTimeout(gateDone,4200)}
 function gateDone(){const g=$("#gate");clearTimeout(g._t);if(g.classList.contains("hide"))return;g.className="hide";const n=gateNext;gateNext=null;n&&n()}
-try{const _ls=Number(localStorage.getItem("salam_seen")||0);if(sessionStorage.getItem("salam_skip")||(_ls&&Date.now()-_ls<3*864e5)){sessionStorage.removeItem("salam_skip");document.getElementById("splash").classList.add("hide");addEventListener("load",()=>setTimeout(()=>{try{enterApp()}catch(e){}},60))}}catch(e){}
+try{if(sessionStorage.getItem("salam_skip")){sessionStorage.removeItem("salam_skip");document.getElementById("splash").classList.add("hide");addEventListener("load",()=>setTimeout(()=>{try{enterApp()}catch(e){}},60))}}catch(e){}
 function enterApp(){try{localStorage.setItem("salam_seen",String(Date.now()))}catch(e){}const sp=$("#splash");sp.style.opacity=0;setTimeout(()=>sp.classList.add("hide"),600);if(hasPin()&&!$("#lock").dataset.ok){const su=lusers().find(u=>u.id===lsGet("salam_sess",""));if(su){$("#lock").dataset.ok="1";applyUser(su)}else showLock("unlock")}}
 /* single exit: through the exit gate only */
 function doExit(){if(ROLE==="visitor"){exitGate(visitorOut);return}exitGate(()=>{lsSet("salam_sess","");FS?logout():switchUser()})}
@@ -1722,7 +1722,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=98;
+const BUILD=99;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
