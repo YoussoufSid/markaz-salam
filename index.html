@@ -1106,57 +1106,67 @@ function payModal(sid,m){
    <div class="fld"><label>المبلغ</label><input name="amount" type="number" min="1" value="${Math.max(0,fee-pd)||""}"></div>
    <div class="fld"><label>تاريخ الدفع</label><input name="date" type="date" value="${today()}"></div>
    <div class="fld"><label>طريقة الدفع</label><select name="method">${METHODS.map(x=>`<option>${x}</option>`).join("")}</select></div>
+   <div class="fld full"><label>توزيع الدفعة</label><select name="dist"><option value="one">عن الشهر المحدد فقط</option><option value="old">على أقدم المتأخرات أولًا (إيصال واحد)</option></select></div>
    <div class="fld full"><label>الدافع / ملاحظة</label><input name="note" value="${esc(s.guardian||"")}"></div></form>
    <p class="note">المستحق عن ${monthName(m)}: ${money(fee)} — المدفوع سابقًا: ${money(pd)}</p>`,
    `<button class="btn p" onclick="savePay('${sid}')">حفظ وإصدار إيصال</button><button class="btn o" onclick="closeModal()">إلغاء</button>`);
 }
 async function savePay(sid){
   const f=readForm("payf"),s=byId("people",sid);if(num(f.amount)<=0){toast("أدخل المبلغ");return}
-  const r={id:uid("f"),kind:"fee",studentId:sid,studentName:s.name,halaqa:s.halaqa||"",month:f.month,amount:num(f.amount),date:f.date,method:f.method,note:f.note,receipt:nextReceipt()};
-  try{await put("finance",r);closeModal();receipt(r);setTimeout(()=>syncPortal([sid]),1500)}catch(e){saveErr(e)}
+  const base={kind:"fee",studentId:sid,studentName:s.name,halaqa:s.halaqa||"",date:f.date,method:f.method,note:f.note,receipt:nextReceipt()};
+  try{
+    if(f.dist==="old"){
+      const parts=splitPayment(s,num(f.amount),f.month);const grp=uid("g");let first=null;
+      for(const [mm,am] of parts){const r={...base,id:uid("f"),month:mm,amount:am,grp};await put("finance",r);first=first||r}
+      closeModal();receipt(first);setTimeout(()=>syncPortal([sid]),1500);return
+    }
+    const r={...base,id:uid("f"),month:f.month,amount:num(f.amount)};
+    await put("finance",r);closeModal();receipt(r);setTimeout(()=>syncPortal([sid]),1500)
+  }catch(e){saveErr(e)}
 }
 function receiptHTML(r){
   return `<div class="paper" style="max-width:600px">${paperHead("إيصال استلام")}
    <table class="tbl"><tr><th>رقم الإيصال</th><td>${esc(r.receipt||"—")}</td><th>التاريخ</th><td>${arDate(r.date)}</td></tr>
    <tr><th>استلمنا من</th><td colspan="3">${esc(r.note||"")}</td></tr>
    <tr><th>${r.kind==="fee"?"عن الطالب/ة":"البيان"}</th><td colspan="3">${esc(r.kind==="fee"?r.studentName+(r.halaqa?" — "+r.halaqa:""):(r.source||"")+" "+(r.desc||""))}</td></tr>
-   ${r.kind==="fee"?`<tr><th>عن شهر</th><td colspan="3">${monthName(r.month)}</td></tr>`:""}
-   <tr><th>المبلغ</th><td colspan="3"><b>${money(r.amount)}</b></td></tr><tr><th>طريقة الدفع</th><td colspan="3">${esc(r.method||"")}</td></tr></table>
+   ${r.kind==="fee"?`<tr><th>عن شهر</th><td colspan="3">${(()=>{const g=r.grp?D.finance.filter(x=>x.grp===r.grp).sort((a,b)=>a.month.localeCompare(b.month)):[];return g.length>1?g.map(x=>monthName(x.month)+" ("+money(x.amount)+")").join(" ، "):monthName(r.month)})()}</td></tr>`:""}
+   <tr><th>المبلغ</th><td colspan="3"><b>${money(r.grp?D.finance.filter(x=>x.grp===r.grp).reduce((a,x)=>a+num(x.amount),0)||r.amount:r.amount)}</b></td></tr><tr><th>طريقة الدفع</th><td colspan="3">${esc(r.method||"")}</td></tr></table>
    <div class="sign"><span>المحاسب${/^السيدة/.test(postName("acc"))?"ة":""}: ${esc(postName("acc"))}<br>التوقيع: ..................</span><span>ختم المركز</span></div></div>`;
 }
 let LASTR=null;
 function receipt(r){if(!r)return;LASTR=r;modal("الإيصال",receiptHTML(r),`<button class="btn p" onclick="printHTML(receiptHTML(LASTR))">🖨️ طباعة / PDF</button><button class="btn o" onclick="closeModal()">إغلاق</button>`,true)}
 function studentPayments(sid){
   const s=byId("people",sid),ps=D.finance.filter(f=>f.kind==="fee"&&f.studentId===sid).sort((a,b)=>b.date.localeCompare(a.date));
-  modal("مدفوعات "+esc(s.name),`<div class="list">`+ps.map(p=>`<div class="row"><div class="grow"><div class="nm">${money(p.amount)} — ${monthName(p.month)}</div><div class="mt">${arDate(p.date)} · ${esc(p.method||"")} · ${esc(p.receipt||"")}</div></div><button class="btn o s" onclick="receipt(D.finance.find(x=>x.id==='${p.id}'))">إيصال</button><button class="btn d s" onclick="delFin('${p.id}')">حذف</button></div>`).join("")+`</div>`);
+  modal("مدفوعات "+esc(s.name),`<div class="list">`+ps.map(p=>`<div class="row"><div class="grow"><div class="nm">${money(p.amount)} — ${monthName(p.month)}</div><div class="mt">${arDate(p.date)} · ${esc(p.method||"")} · ${esc(p.receipt||"")}</div></div><button class="btn o s" onclick="receipt(D.finance.find(x=>x.id==='${p.id}'))">إيصال</button><button class="btn o s" onclick="feeEdit('${p.id}')">تعديل</button><button class="btn d s" onclick="delFin('${p.id}')">حذف</button></div>`).join("")+`</div>`);
 }
 function finList(kind){
   const m=view.month,rows=D.finance.filter(f=>f.kind===kind&&monthOf(f.date)===m).sort((a,b)=>b.date.localeCompare(a.date));
   const tot=rows.reduce((a,f)=>a+num(f.amount),0);
   let h=`<div class="tools"><button class="btn p" onclick="finForm('${kind}')">＋ ${kind==="income"?"إيراد":"مصروف"} جديد</button><span class="sp"></span><b>المجموع: ${money(tot)}</b></div>`;
   if(!rows.length)return h+`<div class="empty">لا توجد ${kind==="income"?"إيرادات":"مصروفات"} في هذا الشهر</div>`;
-  return h+`<div class="list">`+rows.map(f=>`<div class="row"><div class="grow"><div class="nm">${money(f.amount)} — ${esc(f.cat||f.source||"")}</div><div class="mt">${arDate(f.date)} · ${esc(f.desc||"")}${f.personName?" · "+esc(f.personName):""}</div></div>${kind==="income"?`<button class="btn o s" onclick="receipt(D.finance.find(x=>x.id==='${f.id}'))">إيصال</button>`:""}<button class="btn d s" onclick="delFin('${f.id}')">حذف</button></div>`).join("")+`</div>`;
+  return h+`<div class="list">`+rows.map(f=>`<div class="row"><div class="grow"><div class="nm">${money(f.amount)} — ${esc(f.cat||f.source||"")}</div><div class="mt">${arDate(f.date)} · ${esc(f.desc||"")}${f.personName?" · "+esc(f.personName):""}</div></div>${kind==="income"?`<button class="btn o s" onclick="receipt(D.finance.find(x=>x.id==='${f.id}'))">إيصال</button>`:""}<button class="btn o s" onclick="finForm('${kind}','${f.id}')">تعديل</button><button class="btn d s" onclick="delFin('${f.id}')">حذف</button></div>`).join("")+`</div>`;
 }
-function finForm(kind){
+function finForm(kind,eid){
   const isI=kind==="income";
-  modal(isI?"إيراد جديد":"مصروف جديد",`<form id="ff" class="grid" onsubmit="return false">
+  modal(eid?(isI?"تعديل إيراد":"تعديل مصروف"):(isI?"إيراد جديد":"مصروف جديد"),`<form id="ff" class="grid" onsubmit="return false">
    <div class="fld"><label>التاريخ</label><input name="date" type="date" value="${today()}"></div>
    <div class="fld"><label>المبلغ</label><input name="amount" type="number" min="1"></div>
    <div class="fld"><label>${isI?"المصدر":"البند"}</label><select name="${isI?"source":"cat"}">${(isI?INC_SRC:EXP_CATS).map(x=>`<option>${x}</option>`).join("")}</select></div>
    <div class="fld"><label>طريقة الدفع</label><select name="method">${METHODS.map(x=>`<option>${x}</option>`).join("")}</select></div>
    <div class="fld full"><label>${isI?"اسم المتبرع / الجهة والبيان":"البيان"}</label><input name="desc"></div>
    ${isI?`<div class="fld full"><label>استلمنا من</label><input name="note"></div>`:""}</form>`,
-   `<button class="btn p" onclick="saveFin('${kind}')">حفظ</button><button class="btn o" onclick="closeModal()">إلغاء</button>`);
+   `<button class="btn p" onclick="saveFin('${kind}'${eid?",'"+eid+"'":""})">حفظ</button><button class="btn o" onclick="closeModal()">إلغاء</button>`);
+  if(eid){const o=D.finance.find(x=>x.id===eid);if(o){const fm=$("#ff");["date","amount","source","cat","method","desc","note"].forEach(k=>{if(fm[k]&&o[k]!==undefined)fm[k].value=o[k]})}}
 }
-async function saveFin(kind){const f=readForm("ff");if(num(f.amount)<=0){toast("أدخل المبلغ");return}const r={id:uid("f"),kind,...f,amount:num(f.amount)};if(kind==="income")r.receipt=nextReceipt();try{await put("finance",r);closeModal();toast("تم الحفظ");if(kind==="income")receipt(r)}catch(e){saveErr(e)}}
+async function saveFin(kind,eid){const f=readForm("ff");if(num(f.amount)<=0){toast("أدخل المبلغ");return}const old=eid?D.finance.find(x=>x.id===eid):null;const r={...(old||{}),id:old?old.id:uid("f"),kind,...f,amount:num(f.amount)};if(kind==="income"&&!r.receipt)r.receipt=nextReceipt();try{await put("finance",r);closeModal();toast("تم الحفظ");if(kind==="income"&&!eid)receipt(r)}catch(e){saveErr(e)}}
 function delFin(id){modal("حذف القيد","<p>هل تريد حذف هذا القيد المالي نهائيًا؟</p>",`<button class="btn d" id="dfY">حذف</button><button class="btn o" onclick="closeModal()">إلغاء</button>`);$("#dfY").onclick=async()=>{try{await del("finance",id);closeModal();toast("تم الحذف")}catch(e){saveErr(e)}}}
 function finSalary(){
   const m=view.month,st=activeStaff().filter(p=>num(p.salary)>0).sort(byName);
   if(!st.length)return `<div class="empty">لا يوجد عاملون برواتب محددة — أضف «الراتب الشهري» في بياناتهم.</div>`;
   let T=0,P=0;
   const h=st.map(p=>{const paid=D.finance.filter(f=>f.kind==="expense"&&f.cat==="رواتب"&&f.personId===p.id&&f.month===m).reduce((a,f)=>a+num(f.amount),0);T+=num(p.salary);P+=paid;
-    return `<div class="row"><div class="grow"><div class="nm">${esc(p.name)}</div><div class="mt">${CATS[p.cat].s}${p.job?" · "+esc(p.job):""} · ${money(p.salary)}</div></div>${paid>=num(p.salary)?`<span class="tag">صُرف</span>`:`${paid?`<span class="tag w">${money(paid)}</span>`:""}<button class="btn p s" onclick="paySalary('${p.id}','${m}')">صرف</button>`}</div>`}).join("");
-  return `<div class="stats"><div class="stat"><div class="v">${money(T)}</div><div class="k">مجموع الرواتب</div></div><div class="stat"><div class="v">${money(P)}</div><div class="k">المصروف منها</div></div><div class="stat"><div class="v" style="color:var(--red)">${money(Math.max(0,T-P))}</div><div class="k">المتبقي</div></div></div><div class="list">${h}</div>`;
+    return `<div class="row"><div class="grow"><div class="nm">${esc(p.name)}</div><div class="mt">${CATS[p.cat].s}${p.job?" · "+esc(p.job):""} · ${money(p.salary)}</div></div>${paid>0?`<button class="btn o s" onclick="salarySlip('${p.id}','${m}')">قسيمة</button>`:""}${paid>=num(p.salary)?`<span class="tag">صُرف</span>`:`${paid?`<span class="tag w">${money(paid)}</span>`:""}<button class="btn p s" onclick="paySalary('${p.id}','${m}')">صرف</button>`}</div>`}).join("");
+  return `<div class="tools"><button class="btn p s" onclick="payAllSalaries()">💸 صرف رواتب الجميع</button><button class="btn o s" onclick="payrollSheet()">🖨 كشف الرواتب</button></div><div class="stats"><div class="stat"><div class="v">${money(T)}</div><div class="k">مجموع الرواتب</div></div><div class="stat"><div class="v">${money(P)}</div><div class="k">المصروف منها</div></div><div class="stat"><div class="v" style="color:var(--red)">${money(Math.max(0,T-P))}</div><div class="k">المتبقي</div></div></div><div class="list">${h}</div>`;
 }
 function paySalary(pid,m){
   const p=byId("people",pid),paid=D.finance.filter(f=>f.kind==="expense"&&f.cat==="رواتب"&&f.personId===pid&&f.month===m).reduce((a,f)=>a+num(f.amount),0);
@@ -1179,7 +1189,7 @@ function sumTable(S){
 function finSum(){
   const m=view.month,S=sumData(D.finance.filter(f=>monthOf(f.date)===m));
   const ys=center.yearStart||(m.slice(0,4)+"-01-01");const Y=sumData(D.finance.filter(f=>f.date>=ys&&monthOf(f.date)<=m));
-  return `<div class="grid"><div class="panel"><h3>${monthName(m)}</h3>${sumTable(S)}</div><div class="panel"><h3>من ${arDate(ys)} إلى نهاية ${monthName(m)}</h3>${sumTable(Y)}</div></div><button class="btn o" onclick="go('reports',{rep:'finance',month:'${m}'})">🖨️ التقرير المالي للطباعة</button>`;
+  return `<div class="grid"><div class="panel"><h3>${monthName(m)}</h3>${sumTable(S)}</div><div class="panel"><h3>من ${arDate(ys)} إلى نهاية ${monthName(m)}</h3>${sumTable(Y)}</div></div><button class="btn o" onclick="go('reports',{rep:'finance',month:'${m}'})">🖨️ التقرير المالي للطباعة</button> <button class="btn o" onclick="finCSV('month')">⬇ تصدير الشهر (Excel)</button> <button class="btn o" onclick="finCSV('year')">⬇ تصدير السنة</button>`+finChart()+cashPanel();
 }
 
 /* ================= REPORTS ================= */
@@ -1711,7 +1721,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=92;
+const BUILD=94;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}

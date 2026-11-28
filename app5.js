@@ -148,3 +148,72 @@ function glanceHTML(){
     return `<div class="glance">${items.join("")}</div>`
   }catch(e){return ""}
 }
+
+/* ===== تطوير المالية ===== */
+/* توزيع دفعة على أقدم المتأخرات: يعيد [[شهر،مبلغ]...] */
+function splitPayment(s,amount,chosen){
+  const fee=feeOf(s),cur=monthOf(today()),sm=s.start?monthOf(s.start):"";let ms=[];
+  for(let i=5;i>=0;i--){const m=addMonths(cur,-i);if(!sm||m>=sm)ms.push(m)}
+  if(chosen&&!ms.includes(chosen)&&chosen<=cur)ms.unshift(chosen);
+  ms=[...new Set(ms)].sort();let left=amount;const out=[];
+  for(const m of ms){if(left<=0)break;const need=Math.max(0,fee-paidFor(s.id,m));if(!need)continue;const a=Math.min(need,left);out.push([m,a]);left-=a}
+  if(left>0){const t=chosen||cur;const i=out.findIndex(x=>x[0]===t);if(i>=0)out[i][1]+=left;else out.push([t,left])}
+  return out.length?out:[[chosen||cur,amount]]
+}
+/* تعديل دفعة رسوم */
+function feeEdit(id){
+  const o=D.finance.find(x=>x.id===id);if(!o)return;
+  modal("تعديل دفعة — "+esc(o.studentName||""),`<form id="fef" class="grid" onsubmit="return false"><div class="fld"><label>عن شهر</label><input name="month" type="month" value="${o.month||""}"></div><div class="fld"><label>المبلغ</label><input name="amount" type="number" min="1" value="${o.amount}"></div><div class="fld"><label>التاريخ</label><input name="date" type="date" value="${o.date||""}"></div><div class="fld"><label>طريقة الدفع</label><select name="method">${METHODS.map(x=>`<option ${x===o.method?"selected":""}>${x}</option>`).join("")}</select></div><div class="fld full"><label>الدافع / ملاحظة</label><input name="note" value="${esc(o.note||"")}"></div></form>`,`<button class="btn p" onclick="feeEditSave('${id}')">حفظ</button><button class="btn o" onclick="closeModal()">إلغاء</button>`)
+}
+async function feeEditSave(id){
+  const o=D.finance.find(x=>x.id===id),f=readForm("fef");if(!o||num(f.amount)<=0){toast("أدخل المبلغ");return}
+  try{await put("finance",{...o,...f,amount:num(f.amount)});closeModal();toast("تم التعديل");render()}catch(e){saveErr(e)}
+}
+/* الرواتب */
+function salPaid(pid,m){return D.finance.filter(f=>f.kind==="expense"&&f.cat==="رواتب"&&f.personId===pid&&f.month===m).reduce((a,f)=>a+num(f.amount),0)}
+function payAllSalaries(){
+  const m=view.month,st=activeStaff().filter(p=>num(p.salary)>salPaid(p.id,m));
+  if(!st.length){toast("كل الرواتب مصروفة لهذا الشهر");return}
+  const tot=st.reduce((a,p)=>a+num(p.salary)-salPaid(p.id,m),0);
+  modal("💸 صرف رواتب الجميع — "+monthName(m),`<p>سيُسجَّل صرف المتبقي من راتب <b>${st.length}</b> عاملًا، بمجموع <b>${money(tot)}</b>.</p><div class="fld"><label>التاريخ</label><input id="paD" type="date" value="${today()}"></div><div class="fld"><label>طريقة الدفع</label><select id="paM">${METHODS.map(x=>`<option>${x}</option>`).join("")}</select></div>`,`<button class="btn p" id="paY">تأكيد الصرف</button><button class="btn o" onclick="closeModal()">إلغاء</button>`);
+  $("#paY").onclick=async()=>{try{const d=$("#paD").value||today(),me=$("#paM").value;for(const p of st){await put("finance",{id:uid("f"),kind:"expense",cat:"رواتب",personId:p.id,personName:p.name,month:m,date:d,method:me,amount:num(p.salary)-salPaid(p.id,m)})}closeModal();toast("✓ صُرفت رواتب "+st.length+" عاملًا");render()}catch(e){saveErr(e)}}
+}
+function salarySlip(pid,m){
+  const p=byId("people",pid),rows=D.finance.filter(f=>f.kind==="expense"&&f.cat==="رواتب"&&f.personId===pid&&f.month===m).sort((a,b)=>a.date.localeCompare(b.date));
+  const paid=rows.reduce((a,f)=>a+num(f.amount),0);
+  printHTML(`<div class="paper" style="max-width:600px">${paperHead("قسيمة راتب")}<table class="tbl"><tr><th>الاسم</th><td>${esc(p.name)}</td><th>الشهر</th><td>${monthName(m)}</td></tr><tr><th>الوظيفة</th><td>${esc(p.job||CATS[p.cat].s)}</td><th>الراتب الشهري</th><td>${money(p.salary)}</td></tr>${rows.map(f=>`<tr><th>دفعة ${arDate(f.date)}</th><td colspan="3">${money(f.amount)} — ${esc(f.method||"")}</td></tr>`).join("")}<tr><th>المصروف</th><td><b>${money(paid)}</b></td><th>المتبقي</th><td>${money(Math.max(0,num(p.salary)-paid))}</td></tr></table><div class="sign"><span>المحاسب: ${esc(postName("acc"))}<br>التوقيع: ..................</span><span>توقيع المستلم: ..................</span></div></div>`)
+}
+function payrollSheet(){
+  const m=view.month,st=activeStaff().filter(p=>num(p.salary)>0).sort(byName);let T=0,P=0;
+  const rows=st.map((p,i)=>{const pd=salPaid(p.id,m);T+=num(p.salary);P+=pd;return `<tr><td class="c">${i+1}</td><td>${esc(p.name)}</td><td>${esc(p.job||CATS[p.cat].s)}</td><td class="c">${money(p.salary)}</td><td class="c">${money(pd)}</td><td class="c">${money(Math.max(0,num(p.salary)-pd))}</td><td></td></tr>`}).join("");
+  printHTML(`<div class="paper">${paperHead("كشف رواتب "+monthName(m))}<table class="tbl"><tr><th>#</th><th>الاسم</th><th>الوظيفة</th><th>الراتب</th><th>المصروف</th><th>المتبقي</th><th>التوقيع</th></tr>${rows}<tr><td colspan="3"><b>الإجمالي</b></td><td class="c"><b>${money(T)}</b></td><td class="c"><b>${money(P)}</b></td><td class="c"><b>${money(Math.max(0,T-P))}</b></td><td></td></tr></table></div>`,true)
+}
+/* تصدير CSV (يفتح في Excel) */
+function finCSV(scope){
+  const m=view.month,ys=center.yearStart||(m.slice(0,4)+"-01-01");
+  const rows=D.finance.filter(f=>scope==="month"?monthOf(f.date)===m:(f.date>=ys&&monthOf(f.date)<=m)).sort((a,b)=>a.date.localeCompare(b.date));
+  const K={fee:"رسوم طالب",income:"إيراد",expense:"مصروف"};
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const out=[["التاريخ","النوع","البند/المصدر","الطالب/العامل","الشهر","المبلغ","طريقة الدفع","البيان","رقم الإيصال"].map(q).join(",")];
+  rows.forEach(f=>out.push([f.date,K[f.kind]||f.kind,f.cat||f.source||"",f.studentName||f.personName||"",f.month||"",num(f.amount),f.method||"",f.desc||f.note||"",f.receipt||""].map(q).join(",")));
+  const blob=new Blob(["\ufeff"+out.join("\r\n")],{type:"text/csv;charset=utf-8"}),a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="المالية_"+(scope==="month"?m:ys.slice(0,4))+".csv";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+  toast("✓ تم تصدير "+rows.length+" قيدًا")
+}
+/* رسم بياني: آخر 6 أشهر */
+function finChart(){
+  const m=view.month,ms=[];for(let i=5;i>=0;i--)ms.push(addMonths(m,-i));
+  const data=ms.map(x=>{const S=sumData(D.finance.filter(f=>monthOf(f.date)===x));return {x,ti:S.ti,te:S.te}});
+  const mx=Math.max(1,...data.map(d=>Math.max(d.ti,d.te)));
+  return `<div class="panel" style="margin-top:12px"><h3>📈 الإيرادات والمصروفات — آخر 6 أشهر</h3>${data.map(d=>`<div style="margin:8px 0"><div class="mt" style="margin-bottom:3px">${monthName(d.x)}</div><div style="display:flex;align-items:center;gap:6px"><div style="height:12px;border-radius:6px;background:var(--g2);width:${Math.round(d.ti/mx*100)}%;min-width:${d.ti?3:0}px"></div><span class="mt">${money(d.ti)}</span></div><div style="display:flex;align-items:center;gap:6px;margin-top:2px"><div style="height:12px;border-radius:6px;background:var(--gold);width:${Math.round(d.te/mx*100)}%;min-width:${d.te?3:0}px"></div><span class="mt">${money(d.te)}</span></div></div>`).join("")}<div class="mt"><span style="color:var(--g2)">■</span> إيرادات &nbsp; <span style="color:var(--gold)">■</span> مصروفات</div></div>`
+}
+/* رصيد الصندوق */
+function cashPanel(){
+  const m=view.month,S=sumData(D.finance.filter(f=>monthOf(f.date)<=m)),ob=num(center.openBal),bal=ob+S.bal;
+  const canSet=ROLE==="owner"||ROLE==="local";
+  return `<div class="panel" style="margin-top:12px"><h3>🏦 رصيد الصندوق حتى نهاية ${monthName(m)}</h3><div class="stats"><div class="stat"><div class="v">${money(ob)}</div><div class="k">رصيد افتتاحي</div></div><div class="stat"><div class="v" style="color:${bal<0?"var(--red)":"var(--g)"}">${money(bal)}</div><div class="k">الرصيد الحالي</div></div></div>${canSet?`<button class="btn o s" onclick="openBalSet()">تعيين الرصيد الافتتاحي</button>`:""}<div class="note">الرصيد = الافتتاحي + كل الإيرادات − كل المصروفات المسجَّلة في التطبيق (آخر 13 شهرًا محمّلة).</div></div>`
+}
+function openBalSet(){
+  modal("الرصيد الافتتاحي",`<div class="fld"><label>المبلغ</label><input id="obv" type="number" value="${num(center.openBal)||""}"></div><p class="note">الرصيد الموجود في الصندوق قبل أول قيد مسجَّل في التطبيق.</p>`,`<button class="btn p" id="obY">حفظ</button><button class="btn o" onclick="closeModal()">إلغاء</button>`);
+  $("#obY").onclick=async()=>{try{await saveCenter({...center,openBal:num($("#obv").value)});closeModal();toast("تم الحفظ");render()}catch(e){saveErr(e)}}
+}
