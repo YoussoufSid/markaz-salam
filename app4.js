@@ -429,13 +429,13 @@ setInterval(()=>{try{
 function stampPick(inp,key){
   const f=inp.files[0];if(!f)return;const rd=new FileReader();
   rd.onload=()=>{const im=new Image();im.onload=async()=>{
-    try{const W=420,H=Math.round(im.height*W/im.width),c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0,W,H);
+    try{const W=340,H=Math.round(im.height*W/im.width),c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0,W,H);
       const d=x.getImageData(0,0,W,H),px=d.data;
       const L=i=>.299*px[i]+.587*px[i+1]+.114*px[i+2];
       const dark=(L(0)+L((W-1)*4)+L((H-1)*W*4)+L(((H-1)*W+W-1)*4))/4<128;
       const ink=[22,52,140];
       for(let i=0;i<px.length;i+=4){let a=dark?L(i):255-L(i);a=Math.max(0,Math.min(255,(a-30)*1.25));px[i]=ink[0];px[i+1]=ink[1];px[i+2]=ink[2];px[i+3]=a}
-      x.putImageData(d,0,0);const url=c.toDataURL("image/png");
+      x.putImageData(d,0,0);let url=c.toDataURL("image/webp",.9);if(!url.startsWith("data:image/webp"))url=c.toDataURL("image/png");
       await saveCenter({...center,[key]:url});$("#sp_"+key).innerHTML=`<img class="stp" src="${url}" alt="">`;toast("✓ حُفظ الختم")}
     catch(e){saveErr(e)}};
     im.onerror=()=>toast("تعذّر قراءة الصورة");im.src=rd.result};

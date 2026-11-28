@@ -2,11 +2,11 @@
 const KPI_DAYS=30;
 const daysAgo=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())};
 /* آيات الحفظ المسجَّلة لطالب منذ تاريخ معيّن (دون تكرار) */
-function hifzSince(sid,from){
+function hifzSince(sid,from,rows,to){rows=rows||D.daily;
   const off=[];let t=0;SURAH.forEach(q=>{off.push(t);t+=q.a});
   const pos=(n,a)=>{const i=SURAH.findIndex(q=>q.n===n);return i<0?-1:off[i]+Math.max(1,Math.min(SURAH[i].a,Number(a)||1))-1};
   const bm=new Uint8Array(t);let rec=0,last=null;
-  D.daily.forEach(d=>{if(from&&d.date<from)return;const r=d.rec&&d.rec[sid];if(!r||!r.hs||String(r.hs).startsWith("الجزء"))return;
+  rows.forEach(d=>{if(from&&d.date<from)return;if(to&&d.date>to)return;const r=d.rec&&d.rec[sid];if(!r||!r.hs||String(r.hs).startsWith("الجزء"))return;
     let a=pos(r.hs,r.hf),b=pos(r.he||r.hs,r.ht||r.hf);if(a<0||b<0)return;if(b<a){const x=a;a=b;b=x}
     rec++;for(let i=a;i<=b;i++)bm[i]=1});
   let n=0;for(let i=0;i<t;i++)n+=bm[i];return {n,rec}
@@ -17,12 +17,12 @@ function hifzLast(sid){
   return best?best.s+(best.a?" : "+best.a:""):"—"
 }
 /* إحصاءات طالب خلال نافذة زمنية */
-function stuStats(s,from){
-  let p=0,ab=0,tot=0,hz=0;
-  D.daily.forEach(d=>{if(d.date<from)return;const r=d.rec&&d.rec[s.id];if(!r||!r.att)return;if(r.att==="س")return;tot++;if(r.att==="غ")ab++;else p++});
-  const h=hifzSince(s.id,from);
+function stuStats(s,from,rows,to){
+  rows=rows||D.daily;let p=0,ab=0,tot=0,late=0,exc=0;
+  rows.forEach(d=>{if(d.date<from||(to&&d.date>to))return;const r=d.rec&&d.rec[s.id];if(!r||!r.att)return;if(r.att==="س"){exc++;return}tot++;if(r.att==="غ")ab++;else{p++;if(r.att==="ت")late++}});
+  const h=hifzSince(s.id,from,rows,to);
   const plan=num(s.planH),exp=plan*p,ach=exp?Math.round(h.n/exp*100):null;
-  return {p,ab,tot,rate:tot?ab/tot:0,ayat:h.n,hrec:h.rec,plan,exp,ach}
+  return {p,ab,tot,late,exc,rate:tot?ab/tot:0,ayat:h.n,hrec:h.rec,plan,exp,ach}
 }
 function riskOf(s,from,halaqaHasHifz){
   const st=stuStats(s,from),why=[];
@@ -86,7 +86,7 @@ function vKpi(){
   <div class="panel"><h3>مقارنة الحلقات</h3><div class="scroll"><table class="tbl"><tr><th>الحلقة</th><th>الطلاب</th><th>الحضور</th><th>آيات/طالب</th><th>إنجاز الخطة</th></tr>${rows.map(r=>`<tr><td>${esc(r.h.name)}</td><td class="c">${r.n}</td><td class="c" style="color:${col(r.att)};font-weight:700">${r.att===null?"—":r.att+"%"}</td><td class="c">${r.avg}</td><td class="c" style="color:${col(r.ach)};font-weight:700">${r.ach===null?"—":r.ach+"%"}</td></tr>`).join("")||`<tr><td colspan="5" class="c">لا حلقات</td></tr>`}</table></div></div>`;
   h+=`<div class="panel"><h3>⚠️ طلاب يحتاجون متابعة (${rk.length})</h3>${rk.length?rk.slice(0,40).map(x=>`<div class="row"><div class="grow"><div class="nm"><a href="#" onclick="openDetail('${x.s.id}');return false">${esc(x.s.name)}</a></div><div class="mt">${esc(x.h.name)} · ${x.why.join(" · ")}</div></div>${x.s.guardianPhone&&x.st.rate>=0.3?`<a class="btn wa s" href="#" onclick="absWA('${x.s.id}');return false">واتساب</a>`:""}</div>`).join(""):`<div class="alert ok">لا طلاب متعثرون — الحمد لله.</div>`}</div>`;
   if(top.length)h+=`<div class="panel"><h3>🏅 الأكثر حفظًا هذا الشهر</h3>${top.map((x,i)=>`<div class="row"><div class="grow"><div class="nm">${i+1}. ${esc(x.s.name)}</div><div class="mt">${esc(x.s.halaqa||"")}</div></div><span class="tag">${x.a} آية</span></div>`).join("")}</div>`;
-  h+=`<div class="panel"><h3>🛠 أدوات</h3><div class="tools"><button class="btn o" onclick="planModal()">🎯 تعيين خطة حفظ لحلقة</button><button class="btn o" onclick="planSheet()">🖨 كشف خطة الحفظ</button>${can.fin()?`<button class="btn o" onclick="arrearsReport()">🖨 كشف المتأخرات</button>`:""}</div></div>`;
+  h+=`<div class="panel"><h3>🛠 أدوات</h3><div class="tools"><button class="btn o" onclick="planModal()">🎯 تعيين خطة حفظ لحلقة</button><button class="btn o" onclick="planSheet()">🖨 كشف خطة الحفظ</button>${can.fin()?`<button class="btn o" onclick="arrearsReport()">🖨 كشف المتأخرات</button>`:""}<button class="btn o" onclick="termReport()">📅 تقرير فصلي</button><button class="btn o" onclick="bulkWA()">📣 واتساب جماعي</button><button class="btn o" onclick="dqModal()">🧹 فحص جودة البيانات</button></div></div>`;
   return h
 }
 /* تعيين خطة لحلقة كاملة */
@@ -217,3 +217,60 @@ function openBalSet(){
   modal("الرصيد الافتتاحي",`<div class="fld"><label>المبلغ</label><input id="obv" type="number" value="${num(center.openBal)||""}"></div><p class="note">الرصيد الموجود في الصندوق قبل أول قيد مسجَّل في التطبيق.</p>`,`<button class="btn p" id="obY">حفظ</button><button class="btn o" onclick="closeModal()">إلغاء</button>`);
   $("#obY").onclick=async()=>{try{await saveCenter({...center,openBal:num($("#obv").value)});closeModal();toast("تم الحفظ");render()}catch(e){saveErr(e)}}
 }
+
+/* ===== تقرير فصلي بنطاق واسع ===== */
+function termReport(){
+  modal("📅 تقرير فصلي",`<form id="trf" class="grid" onsubmit="return false"><div class="fld"><label>من</label><input name="from" type="date" value="${daysAgo(90)}"></div><div class="fld"><label>إلى</label><input name="to" type="date" value="${today()}"></div><div class="fld full"><label>الحلقة</label><select name="h"><option value="">كل الحلقات</option>${D.halaqat.slice().sort(byName).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></div></form><div id="trOut" class="note">اختر المدة ثم اضغط «إنشاء».</div>`,`<button class="btn p" id="trGo" onclick="termRun()">إنشاء</button>`,true)
+}
+let TERMHTML="";
+async function termRun(){
+  const f=readForm("trf");if(!f.from||!f.to||f.from>f.to){toast("تحقق من التاريخين");return}
+  const out=$("#trOut");out.textContent="جارٍ التحميل…";
+  try{
+    const rows=await fetchRange("daily","date",f.from,f.to);
+    const hs=D.halaqat.slice().sort(byName).filter(x=>!f.h||x.id===f.h);
+    let body="";
+    hs.forEach(x=>{
+      const ss=studentsOf(x);if(!ss.length)return;
+      const st=ss.map(s=>({s,t:stuStats(s,f.from,rows,f.to)}));
+      let P=0,T=0,AY=0;st.forEach(({t})=>{P+=t.p;T+=t.tot;AY+=t.ayat});
+      body+=`<h3 style="margin:14px 0 4px">${esc(x.name)} — حضور ${T?Math.round(P/T*100)+"%":"—"} · ${AY} آية</h3><table class="tbl"><tr><th>#</th><th>الطالب</th><th>حضور</th><th>تأخر</th><th>غياب</th><th>بإذن</th><th>% الحضور</th><th>آيات</th><th>الخطة</th></tr>${st.map(({s,t},i)=>`<tr><td class="c">${i+1}</td><td>${esc(s.name)}</td><td class="c">${t.p}</td><td class="c">${t.late}</td><td class="c">${t.ab}</td><td class="c">${t.exc}</td><td class="c">${t.tot?Math.round(t.p/t.tot*100)+"%":"—"}</td><td class="c">${t.ayat}</td><td class="c">${t.ach===null?"—":t.ach+"%"}</td></tr>`).join("")}</table>`
+    });
+    TERMHTML=`<div class="paper">${paperHead("تقرير الفترة من "+arDate(f.from)+" إلى "+arDate(f.to))}${body||"<p>لا بيانات</p>"}</div>`;
+    out.innerHTML=`<div class="alert ok">جاهز: ${rows.length} سجل متابعة في هذه المدة.</div>`;
+    $("#trGo").outerHTML=`<button class="btn p" onclick="printHTML(TERMHTML)">🖨 طباعة / PDF</button>`
+  }catch(e){out.textContent="تعذّر التحميل";saveErr(e)}
+}
+/* ===== فحص جودة البيانات ===== */
+function dqModal(){
+  const st=activeStudents(),sf=activeStaff();const G=[];
+  const nm={};st.forEach(s=>{const k=normName(s.name);(nm[k]=nm[k]||[]).push(s)});
+  const dup=Object.values(nm).filter(a=>a.length>1).flat();
+  G.push(["أسماء مكرّرة",dup]);
+  G.push(["طلاب بلا هاتف ولي أمر",st.filter(s=>!String(s.guardianPhone||"").replace(/\D/g,""))]);
+  G.push(["طلاب بلا حلقة",st.filter(s=>!s.halaqa)]);
+  G.push(["طلاب بلا صورة",st.filter(s=>!s.photo)]);
+  G.push(["طلاب بلا رقم تسجيل",st.filter(s=>!s.regNo)]);
+  G.push(["عاملون بلا هاتف",sf.filter(p=>!String(p.phone||"").replace(/\D/g,""))]);
+  const tot=G.reduce((a,g)=>a+g[1].length,0);
+  modal("🧹 فحص جودة البيانات",`<div class="note">${tot?"المجموع: "+tot+" ملاحظة":""}</div>`+G.map(([t,a])=>`<div class="panel"><h3>${t} (${a.length})</h3>${a.length?a.slice(0,30).map(p=>`<div class="row"><div class="grow"><div class="nm"><a href="#" onclick="closeModal();openDetail('${p.id}');return false">${esc(p.name)}</a></div><div class="mt">${esc(p.halaqa||"")}</div></div></div>`).join("")+(a.length>30?`<div class="mt">… و${a.length-30} آخرون</div>`:""):`<div class="alert ok">لا ملاحظات ✓</div>`}</div>`).join(""),"",true)
+}
+/* ===== واتساب جماعي متسلسل ===== */
+let BW={sent:new Set(),list:[]};
+function bulkWA(){
+  modal("📣 واتساب جماعي",`<div class="fld"><label>نوع الرسالة</label><select id="bwk" onchange="bulkBuild()"><option value="week">التقرير الأسبوعي لكل الطلاب</option><option value="abs">غائبو اليوم</option><option value="risk">المتعثرون (غياب/حفظ)</option>${can.fin()?`<option value="arr">متأخرو الرسوم</option>`:""}</select></div><div id="bwOut"></div>`,"",true);bulkBuild()
+}
+function bulkBuild(){
+  const k=$("#bwk").value,g=s=>s.gender==="أنثى",t=today();BW.sent=new Set();let L=[];
+  if(k==="week")L=activeStudents().map(s=>({s,msg:weekMsg(s)}));
+  if(k==="abs"){const ids=new Set();D.daily.filter(d=>d.date===t).forEach(d=>Object.entries(d.rec||{}).forEach(([id,r])=>{if(r.att==="غ")ids.add(id)}));L=[...ids].map(id=>byId("people",id)).filter(Boolean).map(s=>({s,msg:`السلام عليكم ورحمة الله وبركاته\nنُعلمكم بأن ${g(s)?"الطالبة":"الطالب"} ${s.name} تغيّب${g(s)?"ت":""} اليوم عن ${center.name}. نرجو إفادتنا بالسبب. جزاكم الله خيرًا.`}))}
+  if(k==="risk")L=allRisks().map(x=>({s:x.s,msg:`السلام عليكم ورحمة الله وبركاته\nنودّ التواصل معكم بشأن ${g(x.s)?"الطالبة":"الطالب"} ${x.s.name} في ${center.name}: ${x.why.join("، ")}. نرجو التعاون معنا لتحسين وضعه. جزاكم الله خيرًا.`}));
+  if(k==="arr")L=arrearsRows().map(r=>({s:r.s,msg:`السلام عليكم ورحمة الله وبركاته\nنذكّركم بأن على ${g(r.s)?"الطالبة":"الطالب"} ${r.s.name} متأخرات رسوم ${r.cnt} أشهر في ${center.name}، المبلغ الإجمالي: ${money(r.tot)}.\nجزاكم الله خيرًا على تعاونكم.`}));
+  const noph=L.filter(x=>!String(x.s.guardianPhone||"").replace(/\D/g,"")).length;
+  BW.list=L.filter(x=>String(x.s.guardianPhone||"").replace(/\D/g,""));BW.list.forEach(x=>x.id=x.s.id);
+  $("#bwOut").innerHTML=BW.list.length?`<div class="tools"><button class="btn p" onclick="bulkNext()">▶ إرسال التالي</button><span class="mt" id="bwC"></span></div>${noph?`<div class="note">${noph} بلا هاتف ولي أمر (مستثنون).</div>`:""}<div class="list">${BW.list.map(x=>`<div class="row" id="bw_${x.id}"><div class="grow"><div class="nm">${esc(x.s.name)}</div><div class="mt">${esc(x.s.halaqa||"")}</div></div><button class="btn wa s" onclick="bulkSend('${x.id}')">إرسال</button></div>`).join("")}</div>`:`<div class="empty">لا مستهدفون ${noph?"("+noph+" بلا هاتف)":""}</div>`;
+  bulkCount()
+}
+function bulkCount(){const c=$("#bwC");if(c)c.textContent="أُرسل "+BW.sent.size+" من "+BW.list.length}
+function bulkSend(id){const x=BW.list.find(y=>y.id===id);if(!x)return;openLink("https://wa.me/"+phoneIntl(x.s.guardianPhone)+"?text="+encodeURIComponent(x.msg));BW.sent.add(id);const r=$("#bw_"+id);if(r){r.style.opacity=.45;r.querySelector("button").textContent="✓ أُرسل"}bulkCount()}
+function bulkNext(){const x=BW.list.find(y=>!BW.sent.has(y.id));if(!x){toast("✓ انتهت القائمة");return}bulkSend(x.id)}
