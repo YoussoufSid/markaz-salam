@@ -430,14 +430,15 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
 #gs{width:100%}#gsr .row{cursor:pointer}
 .stp{width:92px;height:auto;max-height:92px;object-fit:contain;opacity:.92;transform:rotate(-5deg);display:inline-block;margin-top:2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sign .stpA{text-align:center}
 #splash .dua{font-size:13px;padding:10px 16px;margin-top:10px;opacity:.9}
-#gate{position:fixed;inset:0;z-index:60;background:#f4f1e8;overflow:hidden;transition:opacity .8s;--gw:84.8vh}
-#gate::before{content:"";position:absolute;inset:-30px;background:url(gate.jpg) center/cover;filter:blur(18px) brightness(1.05);opacity:.8}
-#gate .gstage{position:absolute;left:50%;top:50%;width:var(--gw);aspect-ratio:735/867;transform:translate(-50%,-50%);transform-origin:50% 62%;animation:gin 1.6s ease-out both}
-#gate .gstage img{width:100%;height:100%;display:block}
-#gate .ginsc{position:absolute;left:50%;width:min(66%,96vw);margin-left:calc(min(66%,96vw)/-2);top:12.4%;text-align:center;animation:glow 1.2s .7s both}
-#gate .gl{display:inline-block;font-size:calc(var(--gw)*.017);letter-spacing:2px;color:#fff;background:#007a38;border-radius:20px;padding:2px 14px;margin-bottom:2px}
-#gate .gv{font-family:Amiri,serif;font-weight:700;font-size:min(calc(var(--gw)*.05),8.4vw);line-height:1.45;color:#0a5f36;text-shadow:0 0 2px #fff,0 0 12px #fff,0 0 22px rgba(255,255,255,.95)}
-#gate .gr{font-size:calc(var(--gw)*.016);color:#8a6a1c;font-weight:700}
+#gate{position:fixed;inset:0;z-index:60;background:#004d26;overflow:hidden;transition:opacity .8s;--gw:min(70vw,30vh,320px)}
+#gate::before{content:"";position:absolute;inset:-30px;background:linear-gradient(180deg,rgba(0,77,38,.72),rgba(0,50,25,.88)),url(building.jpg) center/cover;filter:blur(14px)}
+#gate::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,rgba(240,176,0,.22),transparent 62%);pointer-events:none}
+#gate .gstage{position:absolute;left:50%;top:38%;width:var(--gw);height:calc(var(--gw)*1.25);transform:translate(-50%,-50%);transform-origin:50% 55%;animation:gin 1.6s ease-out both}
+#gate .gstage img{width:100%;height:100%;display:block;object-fit:cover;object-position:46% 35%;border-radius:999px 999px 22px 22px;border:4px solid #f1d58a;box-shadow:0 0 0 8px rgba(241,213,138,.25),0 18px 50px rgba(0,0,0,.55),0 0 60px rgba(240,176,0,.35)}
+#gate .ginsc{position:absolute;left:50%;width:min(92vw,420px);margin-left:calc(min(92vw,420px)/-2);top:calc(100% + 16px);text-align:center;animation:glow 1.2s .7s both}
+#gate .gl{display:inline-block;font-size:12px;letter-spacing:2px;color:#5a3d00;background:#f1d58a;border-radius:20px;padding:2px 14px;margin-bottom:4px;font-weight:800}
+#gate .gv{font-family:Amiri,serif;font-weight:700;font-size:min(26px,7vw);line-height:1.5;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+#gate .gr{font-size:12px;color:#f1d58a;font-weight:700}
 #gate .gtop{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 14px;background:linear-gradient(180deg,rgba(11,94,53,.92),rgba(11,94,53,.0));color:#fff;animation:up .8s .2s both}
 #gate .gtop img{width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px #d9b45a}
 #gate .gtop b{display:block;font-family:Amiri,serif;font-size:19px;line-height:1.2}#gate .gtop span{display:block;font-size:12px;opacity:.95;font-style:italic}
@@ -476,7 +477,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--g2);outline-offs
   </div>
 </div>
 <div id="gate" class="hide" data-notr onclick="if(this.classList.contains('ex'))gateDone()">
-  <div class="gstage"><img src="gate.jpg" alt="بوابة المركز"><div class="ginsc"><div class="gl">بوابة الدخول</div><div class="gv">﴿ادْخُلُوهَا بِسَلَامٍ آمِنِينَ﴾</div><div class="gr">سورة الحجر، الآية 46</div></div></div>
+  <div class="gstage"><img src="building.jpg" alt="مركز السلام للدراسات القرآنية"><div class="ginsc"><div class="gl">بوابة الدخول</div><div class="gv">﴿ادْخُلُوهَا بِسَلَامٍ آمِنِينَ﴾</div><div class="gr">سورة الحجر، الآية 46</div></div></div>
   <div class="gtop"><img src="icon-192.png" alt=""><div><b class="cName">مركز السلام للدراسات القرآنية</b><span class="cNameFr" dir="ltr">Markaz As-Salam pour les études Coraniques</span></div></div>
   <div class="gbot"><div class="gwel">مرحبًا بكم<span dir="ltr">Bienvenue</span></div><div class="gmsg"></div><button class="enter" onclick="event.stopPropagation();gateGo()">ادخل ←</button></div>
 </div>
@@ -1721,7 +1722,7 @@ function toggleLang(){
 document.documentElement.dataset.theme=lsGet("salam_theme","")||"";document.body.dataset.sec=SEC;applyLang();
 window.addEventListener("beforeunload",e=>{if(view.dirty){e.preventDefault();e.returnValue=""}});
 /* automatic updates: check on open/return/every 15 min; apply as soon as nothing is unsaved */
-const BUILD=95;
+const BUILD=98;
 let swReg=null,updPending=false,reloading=false;
 async function chkBuild(){try{if(!navigator.onLine)return;const t=await(await fetch("sw.js?_="+Date.now(),{cache:"no-store"})).text(),m=t.match(/salam-v(\d+)/);if(!m)return;const nv=Number(m[1]);if(nv>BUILD&&sessionStorage.getItem("salam_try")!==String(nv)){sessionStorage.setItem("salam_try",String(nv));if(swReg)await swReg.update().catch(()=>{});setTimeout(applyUpdate,1200)}}catch(e){}}
 function applyUpdate(){if(reloading)return;if(view.dirty||$("#ov")){updPending=true;$("#upd").classList.remove("hide");return}reloading=true;toast("🔄 جارٍ تثبيت التحديث الجديد…");setTimeout(()=>location.reload(),700)}
